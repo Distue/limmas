@@ -1,0 +1,9 @@
+importClassesFrom(Biobase, ExpressionSet)
+
+importFrom(limma, contrasts.fit, eBayes, lmFit, makeContrasts, topTable)
+
+exportClasses(MImputedExpressionSets, SmartAnnotatedDataFrame, CombinedMArrayLM, MImputedMArrayLM)
+
+export("read.pheno", "createExpressionSetFromMaxQuant", "createExpressionSet", "read.maxQuant")
+
+exportPattern("^[^\\.]")

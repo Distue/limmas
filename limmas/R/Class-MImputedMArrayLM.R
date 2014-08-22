@@ -1,0 +1,140 @@
+# setClass("MImputedMArrayLM",
+#          representation(data = "list"
+#          )
+# )
+
+setGeneric("getData", function(object) standardGeneric("getData"))
+setMethod(f="getData", signature="MImputedMArrayLM", definition=function(object) {
+   return(object@data)
+})
+
+setGeneric("getNumberImputations", function(object) standardGeneric("getNumberImputations"))
+setMethod(f="getNumberImputations", signature="MImputedMArrayLM", definition=function(object) {
+   return(length(object@data))
+})
+
+
+# assertions
+setValidity("MImputedMArrayLM", function(object) {
+   msg <- NULL
+   
+   if(!all(unlist(lapply(object@data, function(x) is(x, "MArrayLM"))))) {
+      msg <- c(msg, "data list can only contain MArrayLM objects") 
+   }
+   if(!length(object@data) > 1) {
+      msg <- c(msg, "data list has to have more than one object") 
+   }
+   
+   if (is.null(msg)) TRUE else msg
+})            
+
+
+setGeneric("setData", function(object) standardGeneric("setData"))
+setGeneric("setData<-", function(object, value) standardGeneric("setData<-"))
+setMethod(data, "MImputedMArrayLM", function(object) {
+   slot(object, "data")
+})
+setReplaceMethod("setData", "MImputedMArrayLM", function(object, value){
+   slot(object, "data") <- value
+   validObject(object)
+   return(object)
+})
+
+
+setGeneric("contrastFit", function(fit, contrasts) standardGeneric("contrastFit"))
+setMethod("contrastFit", "MImputedMArrayLM", function(fit, contrasts) {
+   contrastMatrix <- makeContrasts(contrasts=contrasts, levels=fit@data[[1]]$design)
+   
+   #fit each probeset to model
+   fit@data <- lapply(fit@data, function(x) {
+      return(eBayes(contrasts.fit(x, contrastMatrix)))
+   })  
+
+   return(fit)
+})
+
+
+setGeneric("vsFit", function(fit, design, vs) standardGeneric("vsFit"))
+setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="character"), function(fit, design, vs) { 
+   if (!vs %in% colnames(design)) {
+      stop("'vs' is not a colname of design")
+   }
+   return(vsFit(fit, design, which(colnames(design)==vs)))
+})
+
+setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="numeric"), function(fit, design, vs) { 
+   #create contrast 
+   selected.group <- colnames(design)[vs]
+   other.groups   <- colnames(design)[-vs]
+   contrast       <- paste(selected.group, "=", selected.group, " - (", paste(other.groups, collapse="+"), ")/", length(other.groups), sep="")
+   
+   return(limmaContrastFit(data.list, design, contrast))
+})
+
+setMethod("checkMissingness", "MImputedMArrayLM", function(data) {
+   checkMissingness(eset(data, 1))
+})
+   
+setGeneric("combineFits", function(fit) standardGeneric("combineFits"))
+setMethod("combineFits", "MImputedMArrayLM", function(fit) {
+   efit.list <- fit@data
+   featurelist <- efit.list[[1]]$genes
+   m <- length(efit.list) # Number of imputed datasets.
+   nproteins <- nrow(efit.list[[1]]$coeff)  # Number of proteins.
+   coef.all <- lapply(efit.list, coef)  # Extract the model coefficients for each imputed dataset.
+   
+   # Set up matrices for storing results.
+   t.val <- p.value <- p.value.adj <- coefficients <- matrix(NA, nrow=nproteins, ncol=ncol(coef.all[[1]]))
+   
+   # Apply to each gene separately.
+   for(j in 1:nproteins){
+      
+      # Need to get the average of the coefficients and variance-covariance of the coefficients 
+      # for the m imputed datasets.
+      
+      # Extract the m variance-covariance matrices. 
+      variances <- lapply(efit.list, function(x) x$cov.coefficients*x$s2.post[j])
+      
+      # Extract the m vectors of model coefficients.
+      coef <- lapply(coef.all, function(x) x[j,])
+      
+      # Average of the variance-covariance matrices.
+      sum.variance <- Reduce('+', variances)
+      vbar <- sum.variance/m
+      
+      # Average of the coefficient vectors.
+      sum.coefs <- Reduce('+', coef)
+      cbar <- sum.coefs/m
+      
+      # Calculate the between imputation variance-covariance.
+      evar <- var(do.call("rbind", coef))
+      
+      # Calculate the total variance for the imputed data.
+      variance.tot <- vbar+evar*(1/m+1)
+      
+      # Calculate the df for the imputed data.
+      r <- (1 + 1/m)*evar/vbar
+      df <- (m-1)*(1+1/r)^2
+      if(is.matrix(df))
+         df <- diag(df)
+      if(is.matrix(r))
+         r <- diag(r)
+      
+      # Calculate the t.values = coef/SE(coef).
+      temp <- data.frame(coefficients=cbar, SE=sqrt(diag(variance.tot)))
+      t.val[j,] <- temp[,1]/temp[,2]
+      coefficients[j,] <- cbar
+      # Calculate the corresponding p.values using Rubin's df for imputed
+      # data.
+      p.value[j,] <- 2*pt(abs(t.val[j,]), df, lower.tail=FALSE)
+   }
+   
+   ids <- rownames(efit.list[[1]])
+   out <- new("CombinedMArrayLM", ids = ids, coefficients=coefficients, tstat=t.val, p.value=p.value, featurelist=featurelist)
+   return(out)
+})
+
+
+
+
+
