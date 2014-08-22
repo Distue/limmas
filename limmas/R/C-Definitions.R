@@ -23,7 +23,8 @@ setClass("MImputedExpressionSets",
             groupingCol="character",
             minPercentPresent="numeric",
             minTotalPresent="numeric",
-            numberImputations="numeric")
+            numberImputations="numeric",
+            originalData="ExpressionSet")
 )
 
 # This class manages a list of MArrayLM object (from limma) for 
@@ -40,6 +41,6 @@ setClass("CombinedMArrayLM",
             coefficients   = "matrix",
             tstat          = "matrix",
             p.value        = "matrix",
-            featurelist    = "data.frame")
+            featurelist    = "data.frame"")
 )
 

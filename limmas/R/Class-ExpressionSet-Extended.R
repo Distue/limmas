@@ -9,43 +9,12 @@
 # function for calculating percentage of NAs per sample
 # data is ExpressionSet
 setGeneric("checkMissingness", function(data, ...) standardGeneric("checkMissingness"))
-setMethod("checkMissingness", "ExpressionSet", function(data, minIntensity=0) {
-   intensities <- getIntensities(data, minIntensity=minIntensity)
-   return(apply(intensities, 2, function(x) {
-      sum(is.na(x))/length(x)*100
-   }))
-})
-
-setGeneric("getMaxProbabilityMissingByChance", function(data, groupingCol, numberMissing, ...) standardGeneric("getMaxProbabilityMissingByChance"))
-setMethod("getMaxProbabilityMissingByChance", c(data="ExpressionSet", groupingCol="character", numberMissing="numeric"), function(data, groupingCol, numberMissing, ...) {
-   if(numberMissing < 1) {
-      stop("numberMissing has to be equal or greater than 1")
-   }
-   if (!any(groupingCol %in% colnames(pData(data)))) {
-      stop("groupingCol is not a column name of pData(data)")
-   }
-   
-   missingness <- checkMissingness(data, ...)/100
-   
-   groups <- as.character(pData(data)[, groupingCol])
-   names(groups) <- rownames(pData(data))
-   
-   groupprobability <- lapply(unique(groups), function(x) {
-      prod(sort(missingness[names(groups[groups == x])], decreasing=T)[1:numberMissing])
-   })
-   
-   names(groupprobability) <- unique(groups)
-   return(groupprobability)
-})
-
-setGeneric("checkMissingness", function(data, ...) standardGeneric("checkMissingness"))
 setMethod("checkMissingness", "ExpressionSet", function(data, minIntensity=0){
    intensities <- getIntensities(data, minIntensity=minIntensity)
    return(apply(intensities, 2, function(x) {
       sum(is.na(x))/length(x)*100
    }))
 })
-
 
 # function for checking the number of complete rows
 setGeneric("checkCompleteRows", function(data, ...) standardGeneric("checkCompleteRows"))
@@ -154,12 +123,14 @@ setMethod("transformData", "ExpressionSet",
    return(FUN(data))
 })
 
+
 # -----------------------------------------------------------
-# Scaling 
+# shift 
 # -----------------------------------------------------------
-setGeneric("scaleData", function(data, scalefactor, ...) standardGeneric("scaleData"))
-setMethod("scaleData", "ExpressionSet",
-          function(data, scalefactor = 1000, 
+
+setGeneric("shiftData", function(data, scalefactor, ...) standardGeneric("shiftData"))
+setMethod("shiftData", "ExpressionSet",
+          function(data, scalefactor = 1000,
                    FUN = function(x) { exprs(x) <- exprs(x) / scalefactor; return(x) }){
              
              if(!is.function(FUN)) {
@@ -169,13 +140,12 @@ setMethod("scaleData", "ExpressionSet",
              return(FUN(data))
           })
 
-
 # -----------------------------------------------------------
 # imputation
 # -----------------------------------------------------------
 
 setGeneric("imputeIndependentGroupsWithAmelia", function(data.input, ...) standardGeneric("imputeIndependentGroupsWithAmelia"))
-setMethod("imputeIndependentGroupsWithAmelia", "ExpressionSet", function(data.input, minPercentPresent=0, minTotalPresent=1, groupingCol="groups", m=10, empri=.01 * nrow(data.input), ...) {   
+setMethod("imputeIndependentGroupsWithAmelia", "ExpressionSet", function(data.input, minPresent=0.5, groupingCol="groups", m=10,  ...) {   
    #prepare for Amelia
    extractGroups <- function (data, groups) {
       list_for_amelia <- list()
@@ -189,11 +159,10 @@ setMethod("imputeIndependentGroupsWithAmelia", "ExpressionSet", function(data.in
    #for each row: where there are less than 'minPresent' of observed values, 
    #all values are replaced by NA; where there are more than or exactely 'minPresent', 
    #all values and NAs remain unaltered
-   correctFalsePositives <- function (groupTables, minPercentPresent, minTotalPresent=0) { 
+   correctFalsePositives <- function (groupTables, minPresent) { 
       return(lapply(groupTables, function(tab) {
          t(apply(tab, 1, function(x) {
-            # if the sum of values is larger than amount of minimal present, then set everything NA
-            if(sum(!is.na(x)) < max(length(x) * minPercentPresent, minTotalPresent)) {
+            if(sum(is.na(x)) > length(x) * minPresent) {
                x[1:length(x)] <- NA 
             }
             return(x)
@@ -208,11 +177,7 @@ setMethod("imputeIndependentGroupsWithAmelia", "ExpressionSet", function(data.in
             return(x[,grep(paste("imp", i, "\\.", sep=""), colN)])
          }))
          
-         colnames(compiledTable) <- sub("^.+?\\.imp[0-9]+?\\.", "", colnames(compiledTable))
-
-         if (!all(colnames(compiledTable) %in% rownames(pData(pheno)))) {
-            stop("Problems when compiling the imputed groups: trimming of colnames failed.")
-         }
+         colnames(compiledTable) <- sub("^.+?\\.imp.+?\\.", "", colnames(compiledTable))
          
          compiledTable <- compiledTable[,rownames(pData(pheno))]
          return(createExpressionSet(compiledTable, pheno, features, annotation))
@@ -223,22 +188,16 @@ setMethod("imputeIndependentGroupsWithAmelia", "ExpressionSet", function(data.in
    if(!is(data.input, "ExpressionSet")) {
       stop("data is not an object of class ExpressionSet")
    }
-   if (!is.numeric(minPercentPresent)) {
-      stop("minPercentPresent has to be numeric")
+   if (!is.numeric(minPresent)) {
+      stop("minPresent has to be numeric")
    }
-   if (!is.numeric(minTotalPresent)) {
-      stop("minTotalPresent has to be numeric")
-   }
-   if (!(minPercentPresent >= 0 && minPercentPresent < 1)) {
-      stop("minPercentPresent has to be between 0 and 1")
-   }
-   if (!(minTotalPresent > 0)) {
-      stop("minTotalPresent has to be bigger than 0")
+   if (! (minPresent > 0 && minPresent < 1)) {
+      stop("minPresent has to be between 0 and 1")
    }
    if (!is.numeric(m)) {
       stop("m has to be numeric")
    }
-   if(!m > 2) {
+   if(! m > 2) {
       stop("m hast to be greater than 2")
    }
    if(!groupingCol %in% colnames(pData(data.input))) {
@@ -253,74 +212,20 @@ setMethod("imputeIndependentGroupsWithAmelia", "ExpressionSet", function(data.in
    groupTables <- extractGroups(data.input, groups)
    
    # false positive filter
-   groupTables <- correctFalsePositives(groupTables, minPercentPresent=minPercentPresent, minTotalPresent=minTotalPresent)
+   groupTables <- correctFalsePositives(groupTables, minPresent=minPresent)   
    
-   imputations <- lapply(groupTables, function(x) { 
-      return(amelia(x, m=m, empri=empri, ...))
-   })
-   
-   #impute with amelia
-   imputedGroups <- lapply(imputations, function(x) { 
-      return(as.data.frame(x$imputations))
+   ##impute with amelia
+   imputedGroups <- lapply(groupTables, function(x) { 
+      return(as.data.frame(amelia(x, m=m, ...)$imputations))
    })
    
    # create list of expression sets
-   allImputations <- compileImputatedGroups(imputedGroups, m, pheno=phenoData(data.input), features=featureData(data.input), annotation=annotation(data.input))
-   
-   imp.output <- new("MImputedExpressionSets", data=allImputations, minPercentPresent = minPercentPresent, minTotalPresent=minTotalPresent, groupingCol = groupingCol, numberImputations = m)
-   
-   returnList <- list()
-   returnList[["data"]] <- imp.output
-   returnList[["imputation"]] <- imputations
-   return(returnList)
-})
+   allImputations <- compileImputatedGroups(imputedGroups, m, phenoData(data.input), featureData(data.input), annotation(data.input))
 
-
-
-setGeneric("imputeTimeWithAmelia", function(data.input, ...) standardGeneric("imputeTimeWithAmelia"))
-setMethod("imputeTimeWithAmelia", "ExpressionSet", function(data.input, timeCol="time", minTotalPresent=ncol(data.input)/2, m=10, empri=.01 * nrow(data.input), ...) {   
-   if (!is.numeric(m)) {
-      stop("m has to be numeric")
-   }
-   if(!m > 2) {
-      stop("m hast to be greater than 2")
-   }
-   if(!timeCol %in% colnames(pData(data.input))) {
-      stop("timeCol has to be a column name of pData(data.input)")
-   }
+   imp.output <- new("MImputedExpressionSets", data=allImputations, minPresent = minPresent,
+                     groupingCol = groupingCol, numberImputations = m, originalData = data.input)
    
-   time <- pData(data.input)[,timeCol]
-   
-   dataTable <- t(exprs(data.input)[,names(time)])
-   
-   # filter out observations with not more than minTotalPresent observations
-   # filter out any columns which do not vary
-   filter <- apply(dataTable, 2, function(x) {
-      return((sum(is.na(x)) <= (length(x) - minTotalPresent)) && length(unique(x)) > 1)
-   })
-   
-   dataTable <- dataTable[,filter]
-       
-   dataTable <- cbind(as.numeric(as.character(time)), dataTable)
-   colnames(dataTable)[1] <- ".time"
-   
-
-   # filter 
-   imputations <- amelia(dataTable, m=m, empri=empri, ts=".time") 
-   
-   # step, remove time
-   
-   #impute with amelia
-   imputedGroups <- lapply(imputations, function(x) { 
-      return(t(as.data.frame(x$imputations)))
-   })
-   
-   # create list of expression sets
-   allImputations <- compileImputatedGroups(imputedGroups, m, pheno=phenoData(data.input), features=featureData(data.input), annotation=annotation(data.input))
-   
-   imp.output <- new("MImputedExpressionSets", data=allImputations, minPercentPresent = minPercentPresent, minTotalPresent=minTotalPresent, groupingCol = groupingCol, numberImputations = m)
-   
-   return(c(data=imp.output, imputations=imputations))
+   return(imp.output)
 })
 
 
@@ -350,4 +255,5 @@ setMethod("calculateFeatureCorrelations", "ExpressionSet", function(object, use=
    
    return(cor(filterForCor(t(as.matrix(exprs(object)))), use=use, method=method))
 })
+
 

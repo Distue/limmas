@@ -3,10 +3,11 @@ Type: Package
 Title: Linear Models for Mass Spectrometry
 Description: LIMMAS, linear models for mass spectrometry, is an R package to assess differential protein expression in quantitative label-free mass spectrometry data. It extends the widely used linear models for microarrays (LIMMA) package by introducing multiple imputation, a procedure to fill in gaps, thereby effectively coping with the issue of missing data in quantitative label-free mass spectrometry data sets. Additionally, LIMMAS provides tools for i) handling MaxQuant files, ii) filtering and iii) normalizing quantitative mass spectrometry data.
 URL: http://titin.ucd.ie/~tom/limmas
-Maintainer: Thomas Schwarzl <thomas@schwarzl.net>
-Author: Thomas Schwarzl <thomas@schwarzl.net>, Elisa D'Arcangelo <..... >
-Version: 0.4
+Maintainer: Thomas Schwarzl <schwarzl@embl.de>
+Author: Thomas Schwarzl <schwarzl@embl.de>, Elisa D'Arcangelo, with contributions of Matthias Malovits
+Version: 0.3
 License: MIT
-Depends: R (>= 2.11.0), Amelia, limma, affy, affyPLM
+Depends: R (>= 2.11.0), Amelia, limma, ExpressionSet, affy, affyPLM
 Suggests: 
-Imports: Amelia, limma, affyPLM, affy
+Imports: Amelia, ExpressionSet, limma, affyPLM, affy
+Packaged: 2013-04-18 14:43:00 UTC; tom

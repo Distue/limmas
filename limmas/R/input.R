@@ -30,7 +30,7 @@ read.maxQuant <- function(file, pheno, idcolumn="Protein.IDs", splitIds = F, ...
       stop("splitIds has to be a character symbol")
    }
    
-   data <- read.delim(file, header=T, ...)
+   data <- read.delim(file, header=T, stringsAsFactors=F, ...)
    exprset <- createExpressionSetFromMaxQuant(data, pheno, idcolumn=idcolumn)
    
    if(!is.logical(splitIds)) {

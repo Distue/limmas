@@ -1,19 +1,28 @@
 # --------------------------------------------------------
 # Class MImputedExpressionSets
-# Authors: Thomas Schwarzl <thomas@schwarzl.net>, Elisa D'Arcangelo
 # holds ExpressionSets of multiple imputed data
 # --------------------------------------------------------
-# setClass in C-Definitions.R file
+setClass("CombinedMArrayLM",
+         representation=representation(
+            ids            = "character",
+            coefficients   = "matrix",
+            tstat          = "matrix",
+            p.value        = "matrix",
+            featurelist    = "data.frame")
+         )
          
+
+
 # assertions
 setValidity("CombinedMArrayLM", function(object) {
-   msg <- NULL   
+   msg <- NULL
+   
    if (is.null(msg)) TRUE else msg
 })            
 
 
 # This function is a modification of the topTable function in the limma package.
-# fit is a CombinedMArrayLM object
+# fit is a fitted object coming from combine.MI.fits()
 # sort.by = statistic to sort by; choices are p.value ("p" or "P"), t-value ("t" or "T"), "logFC"
 # coef = coefficient of interest from the fitted model
 # adjust.method = method to use for adjusting p-values for multiple testing 
@@ -83,53 +92,11 @@ setMethod("topTableImpute", "CombinedMArrayLM", function(fit, sort.by="p", coef=
 })
 
 
-setGeneric("getSignificantFeatures", function(fit, ...) standardGeneric("getSignificantFeatures"))
-setMethod("getSignificantFeatures", "CombinedMArrayLM", function(fit, p.value=0.05, onlyPositive=F, onlyNegative=F, logFCcutoff=0, ...) {
+setGeneric("getSignificantGenes", function(fit, ...) standardGeneric("getSignificantGenes"))
+setMethod("getSignificantGenes", "CombinedMArrayLM", function(fit, p.value=0.05, ...) {
    tt <- topTableImpute(fit, number=nrow(fit@coefficients), p.value=p.value, ...)
-   if (onlyPositive) {
-      tt <- tt[tt[,"logFC"] > logFCcutoff, ]
-   }
-   
-   if (onlyNegative) {
-      tt <- tt[tt[,"logFC"] < (-1 * logFCcutoff), ]
-   }
-   
-   return(tt)
 })
    
-
-setGeneric("writeSignificantFeatures", function(fit, file, ...) standardGeneric("writeSignificantFeatures"))
-setMethod("writeSignificantFeatures", c(fit="CombinedMArrayLM", file="character"), function(fit, file,  ...) {
-   tt <- getSignificantFeatures(fit,  ...)
-   write.table(tt, file=file, sep="\t", quote=F, row.names=F)
-})
-
-setGeneric("getFeatureFilter", function(fit, data, ...) standardGeneric("getFeatureFilter"))  
-setMethod("getFeatureFilter", c(fit="CombinedMArrayLM", data="MImputedExpressionSets"), function(fit, data, p.value=0.05, adjust="BH", onlyPositive=T, onlyNegative=F, mode="or", ...) {
-   ncoef <- ncol(fit@coefficients)
-   
-   tt <- lapply(1:ncoef, function(x) {
-      return(sort(as.numeric(rownames(getSignificantFeatures(fit, coef=x, adjust=adjust, p.value=p.value, onlyPositive=onlyPositive, onlyNegative=onlyNegative)))))#, ...))
-   })
-   
-   if(mode == "and") {      
-      differ <- tt[[1]]
-      if(length(tt) > 1) {
-         for(i in 2:length(tt)) {
-            differ <- intersect(differ, tt[[i]])
-         }
-      }
-   } else if (mode == "or") {
-      differ <- unique(sort(unlist(tt)))
-   } else {
-      stop("incorrect mode")
-   }
-   
-   return(differ)
-}) 
-
-setGeneric("filterFeatures", function(fit, data, ...) standardGeneric("filterFeatures"))        
-setMethod("filterFeatures", c(fit="CombinedMArrayLM", data="MImputedExpressionSets"), function(fit, data, ...) {
-   return(data[getFeatureFilter(fit, data, ...),])
-})       
+          
+       
              

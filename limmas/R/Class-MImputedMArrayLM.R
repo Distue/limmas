@@ -1,12 +1,9 @@
-# setClass("MImputedMArrayLM",
-#          representation(data = "list"
-#          )
-# )
 
 setGeneric("getData", function(object) standardGeneric("getData"))
 setMethod(f="getData", signature="MImputedMArrayLM", definition=function(object) {
    return(object@data)
 })
+
 
 setGeneric("getNumberImputations", function(object) standardGeneric("getNumberImputations"))
 setMethod(f="getNumberImputations", signature="MImputedMArrayLM", definition=function(object) {
@@ -29,12 +26,12 @@ setValidity("MImputedMArrayLM", function(object) {
 })            
 
 
-setGeneric("setData", function(object) standardGeneric("setData"))
-setGeneric("setData<-", function(object, value) standardGeneric("setData<-"))
+setGeneric("data", function(object) standardGeneric("data"))
+setGeneric("data<-", function(object, value) standardGeneric("data<-"))
 setMethod(data, "MImputedMArrayLM", function(object) {
    slot(object, "data")
 })
-setReplaceMethod("setData", "MImputedMArrayLM", function(object, value){
+setReplaceMethod("data", "MImputedMArrayLM", function(object, value){
    slot(object, "data") <- value
    validObject(object)
    return(object)

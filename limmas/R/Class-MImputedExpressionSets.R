@@ -2,14 +2,14 @@
 # Class MImputedExpressionSets
 # holds ExpressionSets of multiple imputed data
 # --------------------------------------------------------
-# setClass("MImputedExpressionSets",
-#          representation=representation(
-#             data="list",
-#             groupingCol="character",
-#             minPercentPresent="numeric",
-#             minTotalPresent="numeric",
-#             numberImputations="numeric")
-# )
+setClass("MImputedExpressionSets",
+            representation=representation(
+            data="list",
+            groupingCol="character",
+            minPresent="numeric",
+            numberImputations="numeric",
+            originalData="ExpressionSet")
+         )
             
 
 # assertions
@@ -24,11 +24,8 @@ setValidity("MImputedExpressionSets", function(object) {
    if(!object@groupingCol %in% colnames(pData(object@data[[1]]))) {
       msg <- c(msg, "groupingCol is not in the columnnames of pheno") 
    }
-   if(!is.numeric(object@minPercentPresent) && object@minPercentPresent > 0 && object@minPercentPresent < 1) {
-      msg <- c(msg, "minPercentPresent has to be numeric and > 0 and < 1")
-   }
-   if(!is.numeric(object@minTotalPresent) && object@minTotalPresent > 0 ) {
-      msg <- c(msg, "minTotalPresent has to be numeric and > 0 and < 1")
+   if(!is.numeric(object@minPresent) && object@minPresent > 0 && object@minPresent < 1) {
+      msg <- c(msg, "minPresent has to be numeric and > 0 and < 1")
    }
    if(!is.numeric(object@numberImputations) && object@numberImputations > 0) {
       msg <- c(msg, "numberImputations has to be numeric and > 0")
@@ -39,20 +36,17 @@ setValidity("MImputedExpressionSets", function(object) {
    if (is.null(msg)) TRUE else msg
 })            
 
-setGeneric("minPercentPresent", function(object) standardGeneric("minPercentPresent"))
-setGeneric("minPercentPresent<-", function(object, value) standardGeneric("minPercentPresent<-"))
-setMethod(minPercentPresent, "MImputedExpressionSets", function(object) slot(object, "minPercentPresent"))
-setReplaceMethod("minPercentPresent", "MImputedExpressionSets", function(object, value) {
-   slot(object, "minPercentPresent") <- value
-   validObject(object)
-   return(object)
+setGeneric("getOriginalData", function(object) standardGeneric("getOriginalData"))
+setMethod(f="getOriginalData", signature="MImputedExpressionSets", definition=function(object) {
+   return(object@originalData)
 })
 
-setGeneric("minTotalPresent", function(object) standardGeneric("minTotalPresent"))
-setGeneric("minTotalPresent<-", function(object, value) standardGeneric("minTotalPresent<-"))
-setMethod(minTotalPresent, "MImputedExpressionSets", function(object) slot(object, "minTotalPresent"))
-setReplaceMethod("minTotalPresent", "MImputedExpressionSets", function(object, value) {
-   slot(object, "minTotalPresent") <- value
+
+setGeneric("minPresent", function(object) standardGeneric("minPresent"))
+setGeneric("minPresent<-", function(object, value) standardGeneric("minPresent<-"))
+setMethod(minPresent, "MImputedExpressionSets", function(object) slot(object, "minPresent"))
+setReplaceMethod("minPresent", "MImputedExpressionSets", function(object, value) {
+   slot(object, "minPresent") <- value
    validObject(object)
    return(object)
 })
@@ -139,42 +133,31 @@ setMethod("filterCols", "MImputedExpressionSets", function(object, filter) {
    return(object)
 })
 
-setGeneric("fillNAsWithValues", function(object, value) standardGeneric("fillNAsWithValues"))
-setMethod("fillNAsWithValues", "MImputedExpressionSets", function(object, value) { 
+setGeneric("fillNAs", function(object, value) standardGeneric("fillNAs"))
+setMethod("fillNAs", c(object="MImputedExpressionSets", value="numeric"), function(object, value) { 
    object@data  <- lapply(object@data, function(x) fillNAs(x, value))
    return(object)
 })
 
-setMethod("checkMissingness", "MImputedExpressionSets", function(data) {
-   return(checkMissingness(eset(data,1)))
-})
 
-setMethod("checkCompleteRows", "MImputedExpressionSets", function(data) {
-   return(checkCompleteRows(eset(data,1)))
-})
 
-setMethod("dim", "MImputedExpressionSets", function(x) {
-   return(dim(eset(x,1)))
-})
-
-setGeneric("plotIntensities", function(object, ID, ...) standardGeneric("plotIntensities"))
-setMethod("plotIntensities", c(object = "MImputedExpressionSets", ID = "character"), function(object, ID, ...) {  
+setGeneric("plotExpression", function(object, ID, ...) standardGeneric("plotExpression"))
+setMethod("plotExpression", c(object = "MImputedExpressionSets", ID = "character"), function(object, ID, ...) {  
    id <- which(annotation(object) == ID)
    if (length(id) == 0) {
       stop(paste("id '", ID, "' not found", sep=""))
    } else if (length(id) > 1) {
       stop(paste(ID, "has more than 1 entries:", paste(id, sep=","), sep=" "))
    } else {
-      plotIntensities(object, id, ...) 
+      plotExpression(object, id, ...) 
    }
 })
 
 
-setMethod("plotIntensities", c(object = "MImputedExpressionSets", ID = "numeric"), function(object, ID,
+setMethod("plotExpression", c(object = "MImputedExpressionSets", ID = "numeric"), function(object, ID,
                                                    groupingCol = getGroupingCol(object),
                                                    colors = topo.colors(length(unique(pData(object)[,groupingCol]))),
                                                    samplelabels = rownames(pData(object)),
-                                                   main = annotation(object)[ID],
                                                    ... ) {  
    
    if (!is.character(groupingCol)) {
@@ -186,10 +169,13 @@ setMethod("plotIntensities", c(object = "MImputedExpressionSets", ID = "numeric"
    if(length(ID) > 1) {
       stop(paste("ID has length ", length(ID) ,". Only one ID can be plotted at the same time.", sep=""))
    }
-   
+   if(is.null(colors) || is.na(colors)) { 
+      colors = topo.colors(length(unique(pData(object)[,groupingCol])))
+   }
+      
    groups <- as.character(pData(object)[,groupingCol])   
    printTable <- do.call(rbind, lapply(object@data, function(x) exprs(x)[ID,]))
-   
+
    if(length(samplelabels) != ncol(printTable)) {
       stop("samplelabels is not equal to the length of samples")
    }
@@ -199,9 +185,9 @@ setMethod("plotIntensities", c(object = "MImputedExpressionSets", ID = "numeric"
    
    testPrint <- printTable[1,]
    testPrint[is.na(testPrint)] <- 0
-   plot(1:ncol(printTable), testPrint, ylim=c(min(printTable),
-                                                   max(printTable)), col="white", xaxt="n", 
-        main = main,
+   plot(1:ncol(printTable), testPrint, ylim=c(min(testPrint),
+                                                   max(testPrint)), col="white", xaxt="n", 
+        main = paste("Expression of ", annotation(object)[ID], sep=""),
         xlab = "", ylab = "log intensities", ...)
    
    axis(1, at=1:ncol(printTable), labels=samplelabels, las=2)
@@ -211,13 +197,13 @@ setMethod("plotIntensities", c(object = "MImputedExpressionSets", ID = "numeric"
       color <- colors[groupid]
       type <- "b"
       pch  <- 1
-
+      if (all(is.na(printTable[i, position]))) {
+         printTable[i, position] <- 0
+         type <- "p"
+         pch  <- "#"
+      }
+      
       for(i in 1:nrow(printTable)) {
-         if (all(is.na(printTable[i, position]))) {
-            printTable[i, position] <- 0
-            type <- "p"
-            pch  <- "#"
-         }
          lines(position, printTable[i, position], type=type, pch=pch, col=color)
       }
    }

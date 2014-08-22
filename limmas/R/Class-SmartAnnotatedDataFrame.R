@@ -1,9 +1,10 @@
-# setClass("SmartAnnotatedDataFrame",
-#          representation(sampleNamesCol="character",
-#                         originalNamesCol="character"
-#          ),
-#          contains="AnnotatedDataFrame",
-# )
+setClass("SmartAnnotatedDataFrame",
+         representation(sampleNamesCol="character",
+                        originalNamesCol="character"
+         ),
+         contains="AnnotatedDataFrame",
+)
+
 
 setGeneric("originalNamesCol", function(object) standardGeneric("originalNamesCol"))
 #setGeneric("originalNamesCol<-", function(object, value) standardGeneric("originalNamesCol<-"))
@@ -76,40 +77,27 @@ setValidity("SmartAnnotatedDataFrame", function(object) {
 
 setGeneric("getAnnotatedDataFrame", function(object) standardGeneric("getAnnotatedDataFrame"))
 setMethod("getAnnotatedDataFrame", "SmartAnnotatedDataFrame", function(object) {
-   removeColumns <- function(data, cols) {
-   
-      # enough columns
-      if(ncol(data) > 1 + length(cols)) {
-         return(data[,!colnames(data) %in% cols])
-      
-      # only one is remain
-      } else if (ncol(data) > length(cols)) {
-         da <- data.frame(data[,!colnames(data) %in% cols], row.names=rownames(data))
-         colnames(da) <- colnames(data)[!colnames(data) %in% cols]
-         return(da)
-      } else {
-         stop("no columns which specify group relationships")
-      }
-   }
-   
-   
    data <- pData(object)
    # do nothing if the original and the sample names are the same as rownames of pheno
    if(!(object@originalNamesCol == "" && object@sampleNamesCol == "")) {
 
-      # if the sample names are rownames and the original names are in a column, remove the column
+      # if the sample names are rownames and the original names are in a column, remove the column,
+      # unless 1 column would be left
+      # (data.frames of column size of 1 will be converted to bloody vectors)
       if(object@sampleNamesCol == "" && !object@originalNamesCol == "") {
-         data <- removeColumns(data, object@originalNamesCol)
-         
+         if(ncol(data) > 2) { 
+            data <- data[,!colnames(data) %in% object@originalNamesCol]
+         } 
+
       # if the sample names are in a column and the original names are as row names, overwrite row names and remove
       } else if(!object@sampleNamesCol == "" && object@originalNamesCol == "") {
          rownames(data) <- data[,object@sampleNamesCol]
-         data <- removeColumns(data, object@sampleNamesCol)
+         data <- data[,!colnames(data) %in% object@sampleNamesCol ]
          
       # if both are in columns
       } else {
          rownames(data) <- data[,object@sampleNamesCol]
-         data <- removeColumns(data, c(object@originalNamesCol, object@sampleNamesCol))
+         data <- data[,!colnames(data) %in% c(object@originalNamesCol, object@sampleNamesCol)]
       }
    }
    
