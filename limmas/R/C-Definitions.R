@@ -50,6 +50,6 @@ setClass("CombinedMArrayLM",
             coefficients   = "matrix",
             tstat          = "matrix",
             p.value        = "matrix",
-            featurelist    = "data.frame"")
+            featurelist    = "data.frame")
 )
 

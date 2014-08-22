@@ -7,7 +7,7 @@ Maintainer: Thomas Schwarzl <schwarzl@embl.de>
 Author: Thomas Schwarzl <schwarzl@embl.de>, Elisa D'Arcangelo, with contributions of Matthias Malovits
 Version: 0.3
 License: MIT
-Depends: R (>= 2.11.0), Amelia, limma, ExpressionSet, affy, affyPLM
+Depends: R (>= 2.11.0), Amelia, limma
 Suggests: 
-Imports: Amelia, ExpressionSet, limma, affyPLM, affy
+Imports: Amelia, limma
 Packaged: 2013-04-18 14:43:00 UTC; tom

@@ -82,17 +82,17 @@ setReplaceMethod("numberImputations", "MImputedExpressionSets", function(object,
    return(object)
 })
 
-#setGeneric("pData", function(object) standardGeneric("pData"))
+setGeneric("pData", function(object) standardGeneric("pData"))
 setMethod("pData", "MImputedExpressionSets", function(object) {
    return(pData(object@data[[1]]))
 })
 
-#setGeneric("fData", function(object) standardGeneric("fData"))
+setGeneric("fData", function(object) standardGeneric("fData"))
 setMethod("fData", "MImputedExpressionSets", function(object) {
    return(fData(object@data[[1]]))
 })
 
-#setGeneric("annotation", function(object) standardGeneric("annotation"))
+setGeneric("annotation", function(object) standardGeneric("annotation"))
 setMethod("annotation", "MImputedExpressionSets", function(object) {
    return(annotation(object@data[[1]]))
 })
