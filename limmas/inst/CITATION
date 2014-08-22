@@ -1,0 +1,13 @@
+citEntry(entry="article",
+         title = "T",
+         author = personList( as.person("Thomas Schwarzl"),
+                              as.person("Elisa D'Arcangelo"),
+                              as.person("Desmond G Higgins")),
+         year = 2014,
+         journal = "bioRxiv",
+         doi = "",
+         url = "",
+         textVersion = 
+         paste("Thomas Schwarzl, ...  (2014):", 
+               "TBA",
+                " " ) )

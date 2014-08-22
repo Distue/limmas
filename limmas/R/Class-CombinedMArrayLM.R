@@ -4,7 +4,7 @@
 # holds ExpressionSets of multiple imputed data
 # --------------------------------------------------------
 # setClass in C-Definitions.R file
-         
+     
 # assertions
 setValidity("CombinedMArrayLM", function(object) {
    msg <- NULL   
