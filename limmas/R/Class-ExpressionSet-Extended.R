@@ -141,6 +141,22 @@ setMethod("shiftData", "ExpressionSet",
           })
 
 # -----------------------------------------------------------
+# Scaling
+# -----------------------------------------------------------
+setGeneric("scaleData", function(data, scalefactor, ...) standardGeneric("scaleData"))
+setMethod("scaleData", "ExpressionSet",
+          function(data, scalefactor = 1000,
+                   FUN = function(x) { exprs(x) <- exprs(x) / scalefactor; return(x) }){
+             
+             if(!is.function(FUN)) {
+                stop("fun has to be a function")
+             }
+             
+             return(FUN(data))
+          })
+
+
+# -----------------------------------------------------------
 # imputation
 # -----------------------------------------------------------
 
@@ -214,9 +230,13 @@ setMethod("imputeIndependentGroupsWithAmelia", "ExpressionSet", function(data.in
    # false positive filter
    groupTables <- correctFalsePositives(groupTables, minPresent=minPresent)   
    
+   imputations <- lapply(groupTables, function(x) {
+      return(amelia(x, m=m, empri=empri, ...))
+   })
+   
    ##impute with amelia
-   imputedGroups <- lapply(groupTables, function(x) { 
-      return(as.data.frame(amelia(x, m=m, ...)$imputations))
+   imputedGroups <- lapply(imputations, function(x) {
+      return(as.data.frame(x$imputations))
    })
    
    # create list of expression sets
@@ -225,7 +245,10 @@ setMethod("imputeIndependentGroupsWithAmelia", "ExpressionSet", function(data.in
    imp.output <- new("MImputedExpressionSets", data=allImputations, minPresent = minPresent,
                      groupingCol = groupingCol, numberImputations = m, originalData = data.input)
    
-   return(imp.output)
+   returnList <- list()
+   returnList[["data"]] <- imp.output
+   returnList[["imputation"]] <- imputations
+   return(returnList)
 })
 
 

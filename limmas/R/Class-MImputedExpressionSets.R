@@ -36,6 +36,7 @@ setValidity("MImputedExpressionSets", function(object) {
    if (is.null(msg)) TRUE else msg
 })            
 
+# stores the input ExpressionSet
 setGeneric("getOriginalData", function(object) standardGeneric("getOriginalData"))
 setMethod(f="getOriginalData", signature="MImputedExpressionSets", definition=function(object) {
    return(object@originalData)

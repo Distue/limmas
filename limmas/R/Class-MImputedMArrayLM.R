@@ -26,16 +26,16 @@ setValidity("MImputedMArrayLM", function(object) {
 })            
 
 
-setGeneric("data", function(object) standardGeneric("data"))
-setGeneric("data<-", function(object, value) standardGeneric("data<-"))
-setMethod(data, "MImputedMArrayLM", function(object) {
-   slot(object, "data")
-})
-setReplaceMethod("data", "MImputedMArrayLM", function(object, value){
-   slot(object, "data") <- value
-   validObject(object)
-   return(object)
-})
+# setGeneric("data", function(object) standardGeneric("data"))
+# setGeneric("data<-", function(object, value) standardGeneric("data<-"))
+# setMethod(data, "MImputedMArrayLM", function(object) {
+#    slot(object, "data")
+# })
+# setReplaceMethod("data", "MImputedMArrayLM", function(object, value){
+#    slot(object, "data") <- value
+#    validObject(object)
+#    return(object)
+# })
 
 
 setGeneric("contrastFit", function(fit, contrasts) standardGeneric("contrastFit"))

@@ -7,6 +7,7 @@
 
 % to create a pdf use
 % library('knitr'); rm(list=ls()); knit2pdf('limmas.Rnw') 
+
 \documentclass[12pt]{article}
 
 
@@ -105,8 +106,13 @@ Inhibitor. These were quantified using \texttt{MaxQuant} software (Ref) and tech
 \texttt{MaxQuant}. Activation of the guanine exchange factor GEFH1 is dependent on the action of Mek (ref). This study aimed at detecting changes in protein binding dependent on the presence of a specific Mek Inhibitor.
 
 The ExpressionSet containing this data can be loaded with
+
 <<loadGefh1example,results="hide">>=
-# data(gefh1)
+#data(gefh1inhib)
+load("~/bioc/limmas/limmas/data/gefh1inhib.rda")
+data <- gefh1inhib
+pheno <- gefh1inhib.pheno
+# pData(pheno)
 @
 
 If you want to use the example data, you can continue to \ref{sec:filtering}.
@@ -153,10 +159,10 @@ GEFh1.MEKInhib.C	 LFQ.intensity.ALEX_9	 Gefh1Inhib
 \textbf{Reading from file}
 %------------------------------------------------------------ 
 
-The pheno file can be directly read into the workspace by calling
+Your pheno file can be directly read into the workspace by calling
 
-<<readPhenoFile>>=
-# pheno <- read.pheno("pheno.txt", originalNamesCol="OrigNames", sampleNamesCol="")
+<<readPhenoFile, eval=FALSE>>=
+pheno <- read.pheno("pheno.txt", originalNamesCol="OrigNames", sampleNamesCol="")
 @
 
 When reading in the protein intensity raw data, it is often convenient to re-name the samples. LIMMAS provides this function automatically when given original sample names and new sample names for renaming.
@@ -165,10 +171,10 @@ When reading in the protein intensity raw data, it is often convenient to re-nam
 of the pheno data which keeps the raw sample names. This are the exact column names of the data file which hold the protein intensities and are read in in the next step. In the case of the here described data set, this would be for example ``OrigNames''. 
 
 \emph{sampleNamesCol} specifies the name of the column of the pheno data
-which keeps the new sample names. ``'' means simply, that the sample names are stored in the 
+which keeps the new sample names. Empty quotes, `` '',  simply means, that the sample names are stored in the 
 rownames.
 
-In short, after reading the data file, the name for sample \texttt{LFQ.intensity.ALEX 1} will be \texttt{Control.A} in the resulting \Robject{ExpressionSet}. Should the user want to keep the original sample names, the same value must be specified in both arguments.
+In short, after reading the data file, the name for sample \texttt{LFQ.intensity.ALEX\_ 1} will be \texttt{Control.A} in the resulting \Robject{ExpressionSet}. Should the user want to keep the original sample names, the same value must be specified in both arguments.
 
 \Rfunction{read.pheno} creates pheno data of the class \Robject{SmartAnnotatedDataFrame}.
 
@@ -178,8 +184,8 @@ In short, after reading the data file, the name for sample \texttt{LFQ.intensity
 
 If the pheno information is already stored in a \Robject{data.frame}, here \emph{pheno.input}, the following command will create the \Robject{SmartAnnotatedDataFrame} object \Robject{pheno}.
 
-<<phenoFromDataFrame>>=
-#pheno <- SmartAnnotatedDataFrame(pheno.input)
+<<phenoFromDataFrame, eval=FALSE>>=
+pheno <- SmartAnnotatedDataFrame(pheno.input)
 @
 
 %------------------------------------------------------------ 
@@ -193,44 +199,46 @@ of \Robject{AnnotatedDataFrame} objects, as well as additional functions.
 An already existing method \Rfunction{pData} displays the raw pheno data
 
 <<pDataPheno>>=
-#pData(pheno)
+pData(pheno)
 @
 
 Sometimes samples have to be excluded because of quality issues, or because only a subset of the data set is analysed. In the \Robject{SmartAnnotatedDataFrame} object, factors will automatically re-level when samples are excluded. If for example, in the example data the control was to be excluded,
 
-<<pDataPheno2>>=
-#pheno.without.control <- pheno[,-c(1:3)]
+<<pDataPheno2, eval=FALSE>>=
+#BUGGY
+pheno.without.control <- pheno[,-c(1:3)]
 @
 
 the factor returned by pData(pheno.without.control)[,``groups''] would contain two, not three levels
 
-<<phenoWithOutControl>>=
-#pData(pheno.without.control)[,``groups'']
+<<phenoWithOutControl, eval=FALSE>>=
+#BUGGY
+pData(pheno.without.control)[,``groups'']
 @
 
 When successfully created an \Robject{SmartAnnotatedDataFrame} following functions will work:
 
 \Rfunction{getOriginalNames} returns all original sample names.
 <<getOriginalNames>>=
-#getOriginalNames(pheno)
+getOriginalNames(pheno)
 @
 
 \Rfunction{getSampleNames} returns all new sample names.
 <<getSampleNames>>=
-#getSampleNames(pheno) 
+getSampleNames(pheno) 
 @
 
 \Rfunction{getAnnotatedDataFrame} returns an AnnotatedDataFrame without the original sample name column and the new samples as rownames. 
 <<getSampleNames2>>=
-#getAnnotatedDataFrame(pheno)
+class(getAnnotatedDataFrame(pheno))
 @
 
 
 %------------------------------------------------------------ 
-\subsubsection{protein intensity data}
+\subsubsection{Protein intensity data}
 %------------------------------------------------------------ 
 
-Given the \Robject{SmartAnnotatedDataFrame}, \texttt{MaxQuant} intensity data can easily read in.  
+When the \Robject{SmartAnnotatedDataFrame} is provided, the input of \texttt{MaxQuant} intensity data is very easy.
 
 %------------------------------------------------------------ 
 \textbf{From proteinGroups.txt file}
@@ -238,8 +246,8 @@ Given the \Robject{SmartAnnotatedDataFrame}, \texttt{MaxQuant} intensity data ca
 
 The \texttt{MaxQuant} text output file proteinGroups.txt contains the intensities on protein level and a lot of meta information about the quantification process. \Rfunction{read.maxQuant} takes an \Robject{SmartAnnotatedDataFrame} and reads in the samples specified in the \Robject{SmartAnnotatedDataFrame}. It returns the \Robject{ExpressionSet} object we need for analysis.
 
-<<createExpressionSet>>=
-#data <- read.maxQuant(file= 'maxQuantFile.txt', pheno, splitIds= ';')
+<<createExpressionSetFromFile, eval=FALSE>>=
+data <- read.maxQuant(file= 'proteinGroups.txt', pheno, splitIds= ';')
 @
 
 %------------------------------------------------------------ 
@@ -266,8 +274,8 @@ In summary, the features of data can be viewed as follows:
 
 For sources different from \texttt{MaxQuant}, \Robject{ExpressionSet} objects can be created easily with the provided function
 
-<<createExpressionSet2>>=
-#data <- createExpressionSet(intensities, pheno, features, annotation)
+<<createExpressionSetFromOtherSources, eval=FALSE>>=
+data <- createExpressionSet(intensities, pheno, features, annotation)
 @
 
 \begin{itemize}
@@ -293,12 +301,12 @@ Three filtering steps strip the raw data from unwanted protein entries, includin
 \Rfunction{peptideFilter} represents the first filtering step. This function removes all protein entries of an object of the class \Robject{ExpressionSet}, which are characterised by a peptide count smaller than or equal to a user-defined cut-off in the column named ``peptides''.
 
 <<peptideFilter>>=
-#dim(data)
-#data<-peptideFilter(data)
-#dim(data)
+nrow(data)
+data <- peptideFilter(data, peptideCutoff=1, peptideColumn="Peptides")
+nrow(data)
 @
 
-The default value for the parameter \Robject{peptideCutoff} within the function is 1. The amount of protein entries after filtering can easily be checked using \Rfunction{dim(data)}.
+The default value for the parameter \Robject{peptideCutoff} within the function is 1. The amount of protein entries after filtering can easily be checked using \Rfunction{nrow(data)}.
 
 %------------------------------------------------------------
 \subsection{Reverse Filter}
@@ -308,9 +316,9 @@ The default value for the parameter \Robject{peptideCutoff} within the function 
 the parameter 'symbol' within the function.
 
 <<reverseFilter>>=
-#dim(data)
-#data<-reverseFilter(data)
-#dim(data)
+nrow(data)
+data <- reverseFilter(data, symbol = "+", reverseColumn="Reverse")
+nrow(data)
 @
 
 %------------------------------------------------------------
@@ -320,25 +328,25 @@ the parameter 'symbol' within the function.
 Finally, the \Rfunction{contaminantFilter} function removes proteins contained in the chosen contaminant database. The same remark concerning the symbol used to indicate positive hits in the column 'contaminant' is used as above.
 
 <<contaminentFilter>>=
-#dim(data)
-#data<-contaminantFilter(data)
-#dim(data)
+nrow(data)
+data <- contaminantFilter(data, symbol = "+", contaminantColumn="Contaminant")
+nrow(data)
 @
 
 %------------------------------------------------------------
 \section{Check missingness}
 %------------------------------------------------------------
 
-Of great interest for the user and for the purpose of MI is the degree of missingness across the data set. The percentage of missing data in each sample can be checked using \Rfunction{checkMissingness(data)}:
+Of great interest for the user and for the purpose of MI is the degree of missingness across the data set. The median percentage of missing data in each sample can be checked using \Rfunction{checkMissingness(data)}:
 
 <<checkMissingness>>=
-#checkMissingness(data)
+checkMissingness(data)
 @
 
 The number of missing value-free rows across samples can also be determined by calling \Rfunction{checkCompleteRows(data)}
 
 <<checkCompleteRows>>=
-#checkCompleteRows(data)
+checkCompleteRows(data)
 @
 
 
@@ -347,7 +355,8 @@ Missing values within a MS data set are the result of random or systematic detec
 Knowing how likely any protein entity is missing in a given sample is therefore a useful insight that aids in the decision of pinpointing a threshold for true negative detection. This can be accomplished utilising the function \Rfunction{getMaxProbabilityMissingByChance(data, "groups", 3)}. This command calculates the maximum probability of any number of observed values being missing by chance in all groups of replicates, whereby the argument ‘groups’ determines the column in the pheno file that defines individual groups; the number of missing values can be specified with a number <= number of replicates.
 
 <<getMaxProbabilityMissingByChance>>=
-#getMaxProbabilityMissingByChance(data, "groups", 3)
+#TODO
+# getMaxProbabilityMissingByChance(data, "groups", 3)
 @
 
 %------------------------------------------------------------
@@ -359,12 +368,14 @@ It has been observed that normalization is best carried out prior to MI (Ref). N
 is necessary for imputation and fitting the linear model in a later step. Quantile normalization is set as the default method. 
 
 <<normalizeData>>=
-#data.normalized <- normalizeData(data, minIntensity=0)
+data.normalized <- normalizeData(data,
+                                 minIntensity = 0,
+                                 FUN = normalize.ExpressionSet.quantiles) 
 @
 
 The paramenter minIntensity is arbitrary and allows to set a cut-off for protein intensity values, below which the user deems the observed values to be inaccurate, e.g. due to known irregularities of the mass spectrometer.
 Alternative Normalization methods can be used and suggested functions for ExpressionSet objects are described 
-in the package affyPLM (Ref) and include:
+in the package \Rpackage{affyPLM} and include:
 
 \begin{itemize}
    \item normalize.ExpressionSet.quantiles
@@ -377,50 +388,137 @@ in the package affyPLM (Ref) and include:
 The above functions can be employed by passing them into the \Rfunction{normalizeData} function call with the parameter The function \Rfunction{scaleData} scales down the protein intensity values by dividing them by a user-defined scalefactor argument (here chosen to be 1000).
 
 <<normalizeData2>>=
-#data.scaled <- scaleData(data.normalized, 1000)
+data.scaled <- scaleData(data.normalized, 1000)
 @
 
-Normal distribution is achieved via a final step of log-transformation, which is widely used in mass spectrometry data (ref). Other transformations can be passed as functions into the \Rfunction{transformData} function if needed with the parameter xxxx.
+Normal distribution usually is achieved via a final step of log-transformation, which is widely used in mass spectrometry data. 
 
-<<normalizeData3>>=
-#data.transformed <- transformData(data.scaled)
+<<transformData>>=
+data.transformed <- transformData(data.scaled)
+@
+
+Other transformations can be passed as functions into the \Rfunction{transformData} function if needed with the parameter FUN. Here is the example how the log transformation is passed on. In short, this function will be simply applied to the ExpressionSet.
+
+<<transformDataExtended, eval=FALSE>>=
+data.transformed <- transformData(data.scaled,
+                                  FUN = function(x) {
+                                           exprs(x) <- log(exprs(x));
+                                           return(x)
+                                   })
 @
 
 Normality is checked using normal quantile-quantile (Q-Q) plots. A 45 degree diagonal from left bottom to top 
 right would mean a perfectly normal distributed sample.
 
-<<qqnorm>>=
-#par(mfrow=c(3,3))
-#for(i in 1:9) {
-#  qqnorm(exprs(data.transformed)[,i], main = paste("Normal Q-Q Plot: ", 
-#  colnames(exprs(data.transformed))[i], sep=""))
-#}
+
+
+<<qqnorm, fig.height=5>>=
+par(mfrow=c(3,3))
+for(i in 1:9) {
+  qqnorm(exprs(data.transformed)[,i], main = paste("Normal Q-Q Plot: ", 
+  colnames(exprs(data.transformed))[i], sep = ""))
+}
+par(mfrow=c(1,1))
+@
+
+#TODO Picture is missing here 
+%------------------------------------------------------------
+\section{Multiple Imputation}
+%------------------------------------------------------------
+
+Multiple Imputation (MI) is a statistical method to fill up missing data {Ref}.
+Compared to other imputation methods, it has the advantage that the imputated
+values (statistically generated filled in gaps) reflect the variance of the 
+real data set {Ref}. This is in particular important for high-throughput 
+experiments with replicates.
+
+\limmas uses the \Rpackage{Amelia II} R package for the multiple imputation,
+however it can be substituted for any multiple imputation algorithm can be used.
+The input is an \Rclass{ExpressionSet} object and the output is an
+\Rclass{MImputedExpressionSet} object. The \Rclass{MImputedExpressionSet} object
+contains a list of imputed data sets (\Rclass{ExpressionSet}s with filled up
+values), as well as the original data.
+
+%------------------------------------------------------------
+\subsection{Amelia II - Independent Groups}
+%------------------------------------------------------------
+In a immunoprecipitation setup with quantitative label-free MS,
+protein binding partners of a specific target are investigated.
+In different conditions, a protein might have a strong binding
+affinity, whereas in other conditions a protein does not bind
+at all. 
+
+We observed, that MI algorithms tend to fill up values for 
+features in a condition with no observerations at all. This 
+independent group approach was developed to firstly take 
+replicate information for filling up missing values and 
+secondly leave empty observations untouched for biological
+interpretation.
+
+MI of the incomplete data set is carried out utilising the
+function \Rfunction{imputeIndependentGroupsWithAmelia}. As 
+described in the \Rpackage{AmeliaII} package (Ref), this
+command imputes the missing values present in the data set
+on the basis of the variation of the experimental values
+recorded, thereby producing a user defined number
+(\emph{m > 1}) of complete data sets. The default number
+of imputations is set to \emph{m = 10}. 
+
+<<imputeIndependentGroupsWithAmelia, warning=FALSE, results='hide'>>=
+imp <- imputeIndependentGroupsWithAmelia(data.transformed,
+                                         minTotalPresent = 2,
+                                         groupingCol = "groups")
 @
 
 
-%------------------------------------------------------------
-\section{Imputation}
-%------------------------------------------------------------
+\Robject{groupingCol} specifies the sets of replicates (groups)
+across which imputation is to be carried out, as seen in pheno.
+Importantly, the parameter \Robject{minTotalPresent} specifies
+the number of observed values required by the user in each set
+of replicates (group). The following rationale underlies this
+step: For any specific protein and for each group, if \emph{number
+of observed values '=>' minTotalPresent}, then both the present
+and missing values remain unaltered and can be imputed. If however
+\emph{number of observed values < minTotalPresent}, all values for
+that protein in that particular group are replaced by NA values 
+and can therefore not be imputed. This approach aids the imputation
+of likely true positives while hindering the propagation of likely 
+false positive observations.
 
-MI of the incomplete data set is carried out utilising the function \Rfunction{imputeIndependentGroupsWithAmelia}. As 
-described in the \Rpackage{AmeliaII} package (Ref), this command imputes the missing values present in the data set on the basis of the variation of the experimental values recorded, thereby producing a user defined number (\emph{m > 1}) of 
-complete data sets. The default number of imputations is set to \emph{m = 10}. 
+\emph{Note: \Rpackage{Amelia II} will raise 
+a warning 'There are observations in the data that are completely 
+missing. These observations will remain unimputed in the final 
+datasets.' which is exactly what we want.}
 
-<<qqnorm2>>=
-#imp <- imputeIndependentGroupsWithAmelia(data.transformed, minTotalPresent=2, groupingCol=”groups”)
-@
+In the example data, we decided that of the three replicates in 
+each group at least two were required to contain observed data points, 
+in order for the protein intensity values in that specific group to 
+be imputed. Contrarily, for protein entries where only one value out
+of three was observed in a group and two were missing, the observed 
+value was regarded as a likely false positive and was replaced by NA,
+thereby completing a full set of three NAs. These data points cannot
+be imputed.
 
-\Robject{groupingCol} specifies the sets of replicates (groups) across which imputation is to be carried out, as seen in pheno. Importantly, the parameter \Robject{minTotalPresent} specifies the number of observed values required by the user in each set of replicates (group). The following rationale underlies this step: For any specific protein and for each group, if \emph{number of observed values => minTotalPresent}, then both the present and missing values remain unaltered and can be imputed. If however \emph{number of observed values < minTotalPresent}, all values for that protein in that particular group are replaced by NA values and can therefore not be imputed. This approach aids the imputation of likely true positives while hindering the propagation of likely false positive observations.
-
-In the example data, we decided that of the three replicates in each group at least two were required to contain observed data points, in order for the protein intensity values in that specific group to be imputed. Contrarily, for protein entries where only one value out of three was observed in a group and two were missing, the observed value was regarded as a likely false positive and was replaced by NA, thereby completing a full set of three NAs. These data points cannot be imputed.
-
-At this point the in-build \Rpackage{Amelia II} quality checks can be performed. Below is an example of overdispersed starting values diagnostics, specifically for the imputed data in the control group. This diagnostic tool gives some indication as to how sensitive the imputation process is for any particular data set, by visualising how the first and second (as dims=2) principal component change across m imputations (here \emph{m = 10}). If print to screen (\emph{p2s}) is set to 2, a diagnostic output is created. Please refer to the \Rpackage{Amelia II} package description for further details; however, if all lines in the overdispersed starting value plot converge at the same point, it is reflective of a well behaved likelihood of the data.
+At this point the in-build \Rpackage{Amelia II} quality checks 
+can be performed. Below is an example of overdispersed starting 
+values diagnostics, specifically for the imputed data in the control
+group. This diagnostic tool gives some indication as to how sensitive 
+the imputation process is for any particular data set, by visualising
+how the first and second (as dims=2) principal component change 
+across m imputations (here \emph{m = 10}). If print to screen 
+(\emph{p2s}) is set to 2, a diagnostic output is created. Please 
+refer to the \Rpackage{Amelia II} package description for further 
+details; however, if all lines in the overdispersed starting value
+plot converge at the same point, it is reflective of a well behaved
+likelihood of the data.
 
 <<disperse>>=
 #disperse(imp$imputation$Control, m=10,dims=2, p2s=2)
 @
 
 The resulting object \Robject{imp} is a list comprising an object of class MImputedExpressionSets , which is specific to \Rpackage{LIMMAS} and carries the imputed protein expression values, and a list containing further imputation parameters returned by \Rpackage{Amelia}.
+
+
 
 <<disperse2>>=
 #summary(imp)
@@ -429,7 +527,7 @@ The resulting object \Robject{imp} is a list comprising an object of class MImpu
 The former can be extracted from imp with this command:
 
 <<getImputedData>>=
-#data.imputed <- imp[[“data”]]
+#data.imputed <- imp[["data"]]
 @
 
 The features of data.imputed can be explored as follows:
