@@ -1,9 +1,29 @@
+importClassesFrom(Biobase, AnnotatedDataFrame) 
 importClassesFrom(Biobase, ExpressionSet)
-
+importClassesFrom(Biobase, Versioned)
 importFrom(limma, contrasts.fit, eBayes, lmFit, makeContrasts, topTable)
 
-exportClasses(MImputedExpressionSets, SmartAnnotatedDataFrame, CombinedMArrayLM, MImputedMArrayLM)
+exportClasses("MImputedExpressionSets",
+              "SmartAnnotatedDataFrame",
+              "CombinedMArrayLM",
+              "MImputedMArrayLM",
+              "AnnotatedDataFrame",
+              "ExpressionSet")
 
-export("read.pheno", "createExpressionSetFromMaxQuant", "createExpressionSet", "read.maxQuant")
+export(read.pheno,
+       read.maxQuant,
+       createExpressionSetFromMaxQuant,
+       createExpressionSet)
+
+exportMethods(
+      originalNamesCol,
+      "originalNamesCol<-",
+      sampleNamesCol,
+      "sampleNamesCol<-",
+      getOriginalNames,
+      getSampleNames,
+      getAnnotatedDataFrame,
+      "["
+      )
 
 exportPattern("^[^\\.]")

@@ -7,20 +7,22 @@ setClass("SmartAnnotatedDataFrame",
 
 
 setGeneric("originalNamesCol", function(object) standardGeneric("originalNamesCol"))
-#setGeneric("originalNamesCol<-", function(object, value) standardGeneric("originalNamesCol<-"))
-setMethod("originalNamesCol", "SmartAnnotatedDataFrame", function(object) {
+setGeneric("originalNamesCol<-", function(object, value) standardGeneric("originalNamesCol<-"))
+setMethod("originalNamesCol<-", "SmartAnnotatedDataFrame", function(object) {
    slot(object, "originalNamesCol")
 })
-#setReplaceMethod("originalNamesCol<-", "SmartAnnotatedDataFrame", function(object, value){
-#   slot(object, "originalNamesCol") <- value
-#   validObject(object)
-#   return(object)
-#})
+setReplaceMethod("originalNamesCol", "SmartAnnotatedDataFrame", function(object, value){
+   slot(object, "originalNamesCol") <- value
+   validObject(object)
+   return(object)
+})
 
 
 setGeneric("sampleNamesCol", function(object) standardGeneric("sampleNamesCol"))
 setGeneric("sampleNamesCol<-", function(object, value) standardGeneric("sampleNamesCol<-"))
-setMethod(sampleNamesCol, "SmartAnnotatedDataFrame", function(object) slot(object, "sampleNamesCol"))
+setMethod(sampleNamesCol, "SmartAnnotatedDataFrame", function(object) {
+   slot(object, "sampleNamesCol")
+})
 setReplaceMethod("sampleNamesCol", "SmartAnnotatedDataFrame", function(object, value){
    slot(object, "sampleNamesCol") <- value
    validObject(object)
