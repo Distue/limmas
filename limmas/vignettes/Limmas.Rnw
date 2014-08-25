@@ -16,10 +16,16 @@
 
 <<knitr, echo=FALSE, results="hide">>=
 library("knitr")
-opts_chunk$set(tidy=FALSE,dev="png",fig.show="hide",
-               fig.width=4,fig.height=4.5,
-               message=FALSE)
+opts_chunk$set(tidy = FALSE,
+               dev = "pdf",
+               fig.show = "hide",
+               fig.width = 4,
+               fig.height = 4.5,
+               message = FALSE)
 @ 
+
+% Inconsolata as terminal font
+\IfFileExists{inconsolata.sty}{\usepackage{inconsolata}}{\usepackage{zi4}}  
 
 <<style, eval=TRUE, echo=FALSE, results="asis">>=
 BiocStyle::latex()
@@ -35,9 +41,7 @@ library("limmas")
 \title{LIMMAS: Linear models for mass spectrometry}
 %------------------------------------------------------------
 
-\begin{document}
-
-\author{Thomas Schwarzl$^{1,2*}$, Elisa D'Arcangelo$^{1}$, Norma Bargary$^{1}$, Matthias Malovits$^{1}$, Desmond G Higgins$^{1}$, \\[1em] \small{$^{1}$\small{Systems Biology Ireland, University College Dublin, Conway Institute, Dublin, Ireland} \\ \small{$^{2}$European Molecular Biology Laboratory (EMBL), Meyerhofstrasse 1, Heidelberg, Germany} \\ \small{\texttt{$^*$schwarzl@embl.de}}}
+\author{Schwarzl T$^{1,2*}$, D'Arcangelo E$^{1}$, Bargary N$^{1}$, Malovits M$^{1}$, Higgins DG$^{1}$ \\[1em] \small{$^{1}$\small{Systems Biology Ireland, University College Dublin, Conway Institute, Dublin, Ireland} \\ \small{$^{2}$now: European Molecular Biology Laboratory (EMBL), Meyerhofstrasse 1, Heidelberg, Germany} \\ \small{\texttt{$^*$schwarzl@embl.de}}}}
 
 \begin{document}
 
@@ -62,14 +66,15 @@ library("limmas")
      \begin{center}
        \begin{tabular}{ | l | }
          \hline 
-         If you use \deseqtwo{} in published research, please cite:  \\
+         If you use \limmas in published research, please cite:  \\
          \\
-         To be announced
+         To be announced 
          \hline 
        \end{tabular}
      \end{center}
    
-     \end{abstract}
+\end{abstract}
+
 
 
 <<options, results="hide", echo=FALSE>>=
@@ -79,9 +84,6 @@ options(digits=3, width=80, prompt=" ", continue=" ")
 \newpage
 
 \tableofcontents
-
-
-
 
 %------------------------------------------------------------
 \section{Data input}
@@ -298,7 +300,7 @@ Three filtering steps strip the raw data from unwanted protein entries, includin
 \subsection{Peptide Filter}
 %------------------------------------------------------------
 
-\Rfunction{peptideFilter} represents the first filtering step. This function removes all protein entries of an object of the class \Robject{ExpressionSet}, which are characterised by a peptide count smaller than or equal to a user-defined cut-off in the column named ``peptides''.
+\Rfunction{peptideFilter} represents the first filtering step. This function removes all protein entries of an object of the class \Robject{ExpressionSet}, which are characterised by a peptide count smaller than or equal to a user-defined cut-off in the column named ``peptides''. This column contains the maximum amount of peptides for a given proteins found in any sample.
 
 <<peptideFilter>>=
 nrow(data)
@@ -343,7 +345,7 @@ Of great interest for the user and for the purpose of MI is the degree of missin
 checkMissingness(data)
 @
 
-The number of missing value-free rows across samples can also be determined by calling \Rfunction{checkCompleteRows(data)}
+The number of missing value-free rows across samples can also be determined by calling\\ \Rfunction{checkCompleteRows(data)}
 
 <<checkCompleteRows>>=
 checkCompleteRows(data)
@@ -385,9 +387,27 @@ in the package \Rpackage{affyPLM} and include:
    \item normalize.ExpressionSet.scaling
 \end{itemize}
 
-The above functions can be employed by passing them into the \Rfunction{normalizeData} function call with the parameter The function \Rfunction{scaleData} scales down the protein intensity values by dividing them by a user-defined scalefactor argument (here chosen to be 1000).
+The above functions can be employed by passing them into the \Rfunction{normalizeData} function call with the parameter. Remember that you can use the full functionality of an \Rclass{ExpressionSet} object, e.g. you can plot histograms and boxplots easily with
+ 
+<<hist, eval=FALSE>>=
+hist(data.transformed) 
+boxplot(data.transformed)
+@
 
-<<normalizeData2>>=
+of the normalized data as well as the transformed but not normalized data:
+
+<<histWithoutNormalization, eval=FALSE>>=
+hist(transformData(data))
+boxplot(transformData(data))
+@
+
+Eventually, you want to subset the data to normalize the controls and samples 
+separately. The use of \Rclass{ExpressionSet} in \limmas provides a very flexible
+data structure to adapt to different data set properties.
+
+The function \Rfunction{scaleData} scales down the protein intensity values by dividing them by a user-defined scalefactor argument (here chosen to be 1000).
+
+<<scaleData>>=
 data.scaled <- scaleData(data.normalized, 1000)
 @
 
@@ -408,20 +428,24 @@ data.transformed <- transformData(data.scaled,
 @
 
 Normality is checked using normal quantile-quantile (Q-Q) plots. A 45 degree diagonal from left bottom to top 
-right would mean a perfectly normal distributed sample.
+right would mean a perfectly normal distributed sample as shown in Figure \ref{figure/qqnorm}.
+Alternatively, a Shapiro-Wilk test could be performed.
 
 
-
-<<qqnorm, fig.height=5>>=
+<<qqnorm, fig.width=6, fig.height=7>>=
 par(mfrow=c(3,3))
 for(i in 1:9) {
+   par(oma=c(3,3,3,3))
   qqnorm(exprs(data.transformed)[,i], main = paste("Normal Q-Q Plot: ", 
   colnames(exprs(data.transformed))[i], sep = ""))
 }
-par(mfrow=c(1,1))
 @
 
-#TODO Picture is missing here 
+\incfig{figure/qqnorm}{\textwidth}{QQplots of all samples}{
+}
+
+
+
 %------------------------------------------------------------
 \section{Multiple Imputation}
 %------------------------------------------------------------
@@ -465,9 +489,10 @@ recorded, thereby producing a user defined number
 of imputations is set to \emph{m = 10}. 
 
 <<imputeIndependentGroupsWithAmelia, warning=FALSE, results='hide'>>=
-imp <- imputeIndependentGroupsWithAmelia(data.transformed,
+impResult <- imputeIndependentGroupsWithAmelia(data.transformed,
                                          minTotalPresent = 2,
                                          groupingCol = "groups")
+
 @
 
 
@@ -499,6 +524,12 @@ value was regarded as a likely false positive and was replaced by NA,
 thereby completing a full set of three NAs. These data points cannot
 be imputed.
 
+The resulting object \Robject{impResult} is a list comprising an object of class MImputedExpressionSets , which is specific to \Rpackage{LIMMAS} and carries the imputed protein expression values, and a list containing further imputation parameters returned by \Rpackage{Amelia}.
+
+<<ameliaQC2>>=
+summary(impResult)
+@
+
 At this point the in-build \Rpackage{Amelia II} quality checks 
 can be performed. Below is an example of overdispersed starting 
 values diagnostics, specifically for the imputed data in the control
@@ -510,40 +541,181 @@ across m imputations (here \emph{m = 10}). If print to screen
 refer to the \Rpackage{Amelia II} package description for further 
 details; however, if all lines in the overdispersed starting value
 plot converge at the same point, it is reflective of a well behaved
-likelihood of the data.
+likelihood of the data as seen in Figure \ref{figure/ameliaQC}.
 
-<<disperse>>=
-#disperse(imp$imputation$Control, m=10,dims=2, p2s=2)
+<<ameliaQC, fig.width=6, fig.height=7, results='hide', warning=FALSE>>=
+disperse(impResult[["imputation"]]$Control, m = 10, dims = 2, p2s = 2)
 @
 
-The resulting object \Robject{imp} is a list comprising an object of class MImputedExpressionSets , which is specific to \Rpackage{LIMMAS} and carries the imputed protein expression values, and a list containing further imputation parameters returned by \Rpackage{Amelia}.
 
+\incfig{figure/ameliaQC}{0.6\textwidth}{Overdispersed starting values}{
+}
 
-
-<<disperse2>>=
-#summary(imp)
-@
-
-The former can be extracted from imp with this command:
+The \Rclass{MImputedExpressionSet} can be extracted from
+\Robject{impResult} with this command:
 
 <<getImputedData>>=
-#data.imputed <- imp[["data"]]
+data.imputed <- impResult[["data"]]
 @
 
-The features of data.imputed can be explored as follows:
+The features of the \Rclass{MImputedExpressionSet} in data.imputed
+can be explored as follows:
 
-%\begin{itemize}
-%   \item \Rfuction{numberImputations(data.imputed)} returns 10, if set to default
-%   \item \Rfuction{intensities(data.imputed, 1)} returns imputed values of all %groups for the first round of imputation
-%   \item \Rfuction{eset(data.imputed, 1)} shows the expression set data for the %first round of imputation
-%   \item \Rfuction{pData(data.imputed)} shows the pheno file
-%   \item \Rfuction{annotation(data.imputed)} returns the annotation of the imputed %data set
-%   \item \Rfuction{fData(data.imputed)} returns all feature data
-%   \item \Rfuction{dim(eset(data.imputed, 1)} shows the dimensions of the data %matrix returned by the first round of imputation 
-%\end{itemize}
+- Number of Imputations (returns 10, if set to default)
+<<ImputedFeatures, eval=FALSE>>=
+   numberImputations(data.imputed)}
+@
 
-%6 Bait Control
+- Imputed values of all groups for the first round of imputation
+<<ImputedFeaturesIntensities, eval=FALSE>>=
+   intensities(data.imputed, 1)
+@
 
+- Shows the expression set data for the first round of imputation:
+<<ImputedFeaturesEset, eval=FALSE>>=
+   eset(data.imputed, 1)
+@
+
+- Shows the pheno file
+<<ImputedFeaturespData, eval=FALSE>>=
+   pData(data.imputed)
+@
+
+- Annotation of the imputed data set
+<<ImputedFeaturesAnnotation, eval=FALSE>>=
+   annotation(data.imputed)
+@
+
+- All feature data
+<<ImputedFeaturesfData, eval=FALSE>>=
+   fData(data.imputed)
+@
+
+- Dimensions of the data matrix returned by the first round of imputation 
+<<ImputedFeaturesDim, eval=FALSE>>=
+   dim(eset(data.imputed, 1))
+@
+
+\subsection{Amelia II - no groups} 
+
+\limmas will be extended in the future to include other imputation methods 
+and variants. If you want to impute over the whole data set without 
+group associations, then just insert the same value for all samples in the 
+group column in the \emph{pheno} file and run Amelia II - Independent groups - 
+as explained above.
+
+\subsection{Other imputation methods} 
+As mentioned, custom imputation algorithms can be used. Just transform the 
+\emph{m} imputed data sets into \Rclass{ExpressionSets} and create an 
+\Rclass{MImputedExpressionSet}.
+
+
+After the successful imputation, the analysis will be performed.
+
+\section{Before analysis}
+
+\subsection{Bait Control}
+In immunoprecipitation setups, you want to check for the protein of interest. 
+Usually, anti-body controls are performed to control for unspecific binding.
+The easiest way to quickly assess the levels of the protein is to plot the
+protein intensities in the MS data (Figure \ref{figure/bait}).
+
+<<bait, fig.width=6, fig.height=5, results='hide', warning=FALSE>>=
+par(oma=c(2,2,2,2))
+plotExpression(data.imputed, "Q92974", main="ARHGEF2") 
+@
+
+\incfig{figure/bait}{0.8\textwidth}{Bait control plot}{
+Here, clearly you can see that the control was detected in all of the samples
+and the control and has a much higher expression than the control in both 
+conditions.
+}
+
+\subsection{Complete Cases} 
+There are applications where you want to compare only complete feature rows in
+your data set, or if you want to assess how many rows got completely filled 
+up by the imputation. The complete feature rows can be extracted by:
+
+<<complete>>=
+data.complete <- completeCases(data.imputed)
+@ 
+
+and the row count can be checked by
+<<nrowComplete>>=
+nrow(eset(data.complete, 1))
+@
+
+
+\subsection{Filling up the missing values} 
+
+Biologically, the most interesting cases are proteins which are detected
+in one condition and are significantly not detectable in the other condition.
+
+Therefore we can just fill the missing values with 0s. \emph{Note: This
+approach has to be complemented by other analysis and the interpretation 
+has to be adjusted. A logFC between a 0 value condition and a real value
+condition cannot be taken a statistical value, but merely it allows to
+easily filter out and interepret the e.g. > 10 logFC. Also the linear 
+model can vary when the model is built on this filled data set. Therefore
+always do a compelete case analysis as well.} However, this approach is a
+very quick and convient way to analyse and assess the whole data once the
+biological interpretation is clear.
+
+<<fillNAs>>=
+data.filled <- fillNAs(data.imputed, 0) # TODO
+nrow(eset(data.filled, 1))  
+@
+
+\section{Analysis}
+For the statistical analysis, \limmas  makes use of the fantastic
+linear models for microarray (\Rpackage{limma}) package. The 
+analysis of MS data is very similar to microarray analysis, 
+except the problem with the missing values in MS data. We cope 
+with this issue using the multiple imputation approach. \Rpackage{limma}
+is extremely flexible, if you have no experience with \Rpackage{limma},
+please go and have a look at their extremely well documented vignette. 
+
+\limmas uses linear models to do the statistical analysis on the 
+\emph{m} different imputed data sets. Linear models can be used 
+for multifactorial designs which become more popular with the 
+current developments in the MS field. Also, e.g. batch effects 
+can be modeled in in the statistical analysis.
+
+After using linear models on the \emph{m} imputed data sets, the 
+results have to be statistically \emph{pooled}. This is important 
+to adjust for in-between and across data set variablity.
+In \Rpackage{limmas}, we provide these functionality for 
+easy pooling of the results.
+
+\subsection{The design matrix}
+A design matrix has to be constructed for fitting the model. This
+basic concept is well documented in the \Rpackage{limma} vignette.
+Here an example is giving where the model is fitted on group and
+batches.
+
+<<fillNAs>>=
+p <- pData(data.imputed)
+design <- model.matrix(~0 + p$groups + p$batch, data=p) 
+colnames(design) <- c(levels(p$groups), levels(p$batch)[-1])
+design
+@
+
+\subsection{Fitting the model} 
+Now we fit the model for each imputed data set 
+in \Rpackage{limma} fashion.
+
+<<fitting, warning=FALSE>>=
+fit.imputed <- limmasFit(data.filled, design)
+fit.contrast <- contrastFit(fit.imputed, c("Gefh1 - Control", "Gefh1Inhib - Control"))
+
+fit.filter <- combineFits()
+tt.spec.gefh1 <- getSignificantFeatures(fit.filter, coef=1)
+nrow(tt.spec.gefh1)
+@
+
+\emph{Note: When you fill in the same values for NAs, \Rpackage{limma} will return a
+Warning, which is expected.
+}
 
 
 \end{document}

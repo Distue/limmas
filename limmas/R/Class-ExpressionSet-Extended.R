@@ -231,7 +231,7 @@ setMethod("imputeIndependentGroupsWithAmelia", "ExpressionSet", function(data.in
    groupTables <- correctFalsePositives(groupTables, minPresent=minPresent)   
    
    imputations <- lapply(groupTables, function(x) {
-      return(amelia(x, m=m, empri=empri, ...))
+      return(amelia(x, m=m, ...))
    })
    
    ##impute with amelia
