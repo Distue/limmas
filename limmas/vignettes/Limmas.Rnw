@@ -440,12 +440,13 @@ Alternatively, a Shapiro-Wilk test could be performed.
 
 
 <<qqnorm, fig.width=6, fig.height=7>>=
-par(mfrow=c(3,3))
+par(mfrow=c(3,3), oma=c(3,3,3,3))
 for(i in 1:9) {
-   par(oma=c(3,3,3,3))
    qqnorm(exprs(data.transformed)[,i],
           main = paste("Normal Q-Q Plot: ", 
-          colnames(exprs(data.transformed))[i], sep = ""))
+          colnames(exprs(data.transformed))[i], sep = ""),
+          cex=0.8,
+          cex.main=0.7)
 }
 @
 
@@ -511,7 +512,7 @@ Importantly, the parameter \Robject{minTotalPresent} specifies
 the number of observed values required by the user in each set
 of replicates (group). The following rationale underlies this
 step: For any specific protein and for each group, if \emph{number
-of observed values '=>' minTotalPresent}, then both the present
+of observed values \geq minTotalPresent}, then both the present
 and missing values remain unaltered and can be imputed. If however
 \emph{number of observed values < minTotalPresent}, all values for
 that protein in that particular group are replaced by NA values 
@@ -725,7 +726,7 @@ topTableImpute(fit, n=5, coef=1)
 @
 
 \emph{Note: If you have filled in values for NAs, \Rpackage{limma} can return a
-Warning, which is expected.}
+warning, which is expected.}
 
 To retrieve the significant results for all different contrasts:  
 
