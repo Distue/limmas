@@ -134,8 +134,8 @@ setMethod("filterCols", "MImputedExpressionSets", function(object, filter) {
    return(object)
 })
 
-setGeneric("fillNAs", function(object, value) standardGeneric("fillNAs"))
-setMethod("fillNAs", c(object="MImputedExpressionSets", value="numeric"), function(object, value) { 
+setGeneric("fillNAsWithValues", function(object, value) standardGeneric("fillNAsWithValues"))
+setMethod("fillNAsWithValues", c(object="MImputedExpressionSets", value="numeric"), function(object, value) { 
    object@data  <- lapply(object@data, function(x) fillNAs(x, value))
    return(object)
 })
@@ -187,7 +187,7 @@ setMethod("plotExpression", c(object = "MImputedExpressionSets", ID = "numeric")
    testPrint <- printTable[1,]
    testPrint[is.na(testPrint)] <- 0
    plot(1:ncol(printTable), testPrint, ylim=c(min(testPrint),
-                                                   max(testPrint)), col="white", xaxt="n", 
+                                                   max(testPrint)+0.3), col="white", xaxt="n", 
         main = paste("Expression of ", annotation(object)[ID], sep=""),
         xlab = "", ylab = "log intensities", ...)
    

@@ -53,7 +53,7 @@ library("limmas")
    Statistical software used for the identification of differentially expressed proteins typically require the data to be complete.
    Methods for dealing with missing data are usually inappropriate in that substantial amounts of information is lost and the data distribution is skewed; other, more efficient techniques present themselves as complicated to implement and data set-specific (Ref, http://sites.stat.psu.edu/~jls/mifaq.html). 
    Multiple imputation (MI) emerges as an interesting, easy to implement alternative for analysing incomplete data (Ref). 
-   MI is a Monte Carlo technique which substitutes missing values with m>1 estimated values (m typically amounts to 3-10), thereby producing \emph{m greater than 1} complete data sets. Each one of these is individually analysed with the statistical method of 
+   MI is a Monte Carlo technique which substitutes missing values with \emph{m \textgreater  1} estimated values (m typically amounts to 3-10), thereby producing \emph{m \textgreater  1} complete data sets. Each one of these is individually analysed with the statistical method of 
    choice and the results are then pooled into estimates, whereby missing-data uncertainty is incorporated (Ref: http://sites.stat.psu.edu/~jls/mifaq.html).
    In our approach, we show how incomplete protein entries can be salvaged using MI and the full amount of MS information subsequently used for differential protein expression analysis. Analysis of differential protein expression is  carried out with linear models and empiric Bayes method of the Linear Models for Microarray Data (limma) package (Ref). limma allows to fit a linear model to the expression data of each protein, whereby both simple experiments and 
    experimental designs involving several groups and factors as well as time course experiments can be handled effectively.
@@ -66,10 +66,11 @@ library("limmas")
      \begin{center}
        \begin{tabular}{ | l | }
          \hline 
-         If you use \limmas in published research, please cite:  \\
+         If you use \Rpackage{limmas} in published research, please cite:  \\
          \\
          To be announced 
-         \hline 
+         \\
+         \hline
        \end{tabular}
      \end{center}
    
@@ -137,28 +138,33 @@ as \Robject{SmartAnnotatedDataFrame}.
 %------------------------------------------------------------ 
 
 A pheno file is a tab-separated text-file where each row describes a sample.
-Here, the rows start with the sample name, then the column name of the raw data file
-where the protein intensities can be found. The next column 'groups' 
+As our beloved biologists often chose variable names, \Rpackage{limmas} contains
+the functionality to rename these samples to a bioinformatics-friendly name.
+
+In our example, the rows start with the sample name,
+then the column name in the raw data file where the
+protein intensities can be found. The next column 'groups' 
 describes the sample groups. Any other 
-factors for the analysis can be added, one factor per column.
+factors for the analysis can be added, one factor per column, 
+like batch, time.
 
 We call this pheno file ``pheno.txt''.
 
 \begin{verbatim}
-                  OrigNames               groups       
-Control.A	        LFQ.intensity.ALEX_1	 Control	    
-Control.B	        LFQ.intensity.ALEX_2	 Control	    
-Control.C	        LFQ.intensity.ALEX_3	 Control	    
-GEFh1.A           LFQ.intensity.ALEX_4	 Gefh1	    
-GEFh1.B           LFQ.intensity.ALEX_5	 Gefh1	    
-GEFh1.C           LFQ.intensity.ALEX_6	 Gefh1	    
-GEFh1.MEKInhib.A	 LFQ.intensity.ALEX_7	 Gefh1Inhib	 
-GEFh1.MEKInhib.B	 LFQ.intensity.ALEX_8	 Gefh1Inhib	 
-GEFh1.MEKInhib.C	 LFQ.intensity.ALEX_9	 Gefh1Inhib	 
+                  OrigNames               groups       batch 
+Control.A	        LFQ.intensity.ALEX_1	 Control	    A
+Control.B	        LFQ.intensity.ALEX_2	 Control	    B
+Control.C	        LFQ.intensity.ALEX_3	 Control	    C
+GEFh1.A           LFQ.intensity.ALEX_4	 Gefh1	       A
+GEFh1.B           LFQ.intensity.ALEX_5	 Gefh1	       B
+GEFh1.C           LFQ.intensity.ALEX_6	 Gefh1	       C
+GEFh1.MEKInhib.A	 LFQ.intensity.ALEX_7	 Gefh1Inhib	 A
+GEFh1.MEKInhib.B	 LFQ.intensity.ALEX_8	 Gefh1Inhib	 B
+GEFh1.MEKInhib.C	 LFQ.intensity.ALEX_9	 Gefh1Inhib	 C
 \end{verbatim}
 
 %------------------------------------------------------------ 
-\textbf{Reading from file}
+\textbf{Reading from a file}
 %------------------------------------------------------------ 
 
 Your pheno file can be directly read into the workspace by calling
@@ -176,7 +182,7 @@ of the pheno data which keeps the raw sample names. This are the exact column na
 which keeps the new sample names. Empty quotes, `` '',  simply means, that the sample names are stored in the 
 rownames.
 
-In short, after reading the data file, the name for sample \texttt{LFQ.intensity.ALEX\_ 1} will be \texttt{Control.A} in the resulting \Robject{ExpressionSet}. Should the user want to keep the original sample names, the same value must be specified in both arguments.
+In short, after reading the data file, the name for sample \texttt{LFQ.intensity.ALEX\_1} will be \texttt{Control.A} in the resulting \Robject{ExpressionSet}. Should the user want to keep the original sample names, the same value must be specified in both arguments.
 
 \Rfunction{read.pheno} creates pheno data of the class \Robject{SmartAnnotatedDataFrame}.
 
@@ -249,7 +255,7 @@ When the \Robject{SmartAnnotatedDataFrame} is provided, the input of \texttt{Max
 The \texttt{MaxQuant} text output file proteinGroups.txt contains the intensities on protein level and a lot of meta information about the quantification process. \Rfunction{read.maxQuant} takes an \Robject{SmartAnnotatedDataFrame} and reads in the samples specified in the \Robject{SmartAnnotatedDataFrame}. It returns the \Robject{ExpressionSet} object we need for analysis.
 
 <<createExpressionSetFromFile, eval=FALSE>>=
-data <- read.maxQuant(file= 'proteinGroups.txt', pheno, splitIds= ';')
+data <- read.maxQuant(file = 'proteinGroups.txt', pheno, splitIds = ';')
 @
 
 %------------------------------------------------------------ 
@@ -348,13 +354,14 @@ checkMissingness(data)
 The number of missing value-free rows across samples can also be determined by calling\\ \Rfunction{checkCompleteRows(data)}
 
 <<checkCompleteRows>>=
-checkCompleteRows(data)
+before.imputation <- checkCompleteRows(data)
+before.imputation 
 @
 
 
 Missing values within a MS data set are the result of random or systematic detection errors. It is therefore often hard to determine, especially for proteins close to the detection limit, whether an entity is truly missing or simply not recorded. 
 
-Knowing how likely any protein entity is missing in a given sample is therefore a useful insight that aids in the decision of pinpointing a threshold for true negative detection. This can be accomplished utilising the function \Rfunction{getMaxProbabilityMissingByChance(data, "groups", 3)}. This command calculates the maximum probability of any number of observed values being missing by chance in all groups of replicates, whereby the argument ‘groups’ determines the column in the pheno file that defines individual groups; the number of missing values can be specified with a number <= number of replicates.
+Knowing how likely any protein entity is missing in a given sample is therefore a useful insight that aids in the decision of pinpointing a threshold for true negative detection. This can be accomplished utilising the function \Rfunction{getMaxProbabilityMissingByChance(data, "groups", 3)}. This command calculates the maximum probability of any number of observed values being missing by chance in all groups of replicates, whereby the argument ‘groups’ determines the column in the pheno file that defines individual groups; the number of missing values can be specified with a number \geq number of replicates.
 
 <<getMaxProbabilityMissingByChance>>=
 #TODO
@@ -436,15 +443,17 @@ Alternatively, a Shapiro-Wilk test could be performed.
 par(mfrow=c(3,3))
 for(i in 1:9) {
    par(oma=c(3,3,3,3))
-  qqnorm(exprs(data.transformed)[,i], main = paste("Normal Q-Q Plot: ", 
-  colnames(exprs(data.transformed))[i], sep = ""))
+   qqnorm(exprs(data.transformed)[,i],
+          main = paste("Normal Q-Q Plot: ", 
+          colnames(exprs(data.transformed))[i], sep = ""))
 }
 @
 
+
+
 \incfig{figure/qqnorm}{\textwidth}{QQplots of all samples}{
+
 }
-
-
 
 %------------------------------------------------------------
 \section{Multiple Imputation}
@@ -485,7 +494,7 @@ described in the \Rpackage{AmeliaII} package (Ref), this
 command imputes the missing values present in the data set
 on the basis of the variation of the experimental values
 recorded, thereby producing a user defined number
-(\emph{m > 1}) of complete data sets. The default number
+(\emph{m \textgreater 1}) of complete data sets. The default number
 of imputations is set to \emph{m = 10}. 
 
 <<imputeIndependentGroupsWithAmelia, warning=FALSE, results='hide'>>=
@@ -598,7 +607,7 @@ can be explored as follows:
 
 \subsection{Amelia II - no groups} 
 
-\limmas will be extended in the future to include other imputation methods 
+\limmas  will be extended in the future to include other imputation methods 
 and variants. If you want to impute over the whole data set without 
 group associations, then just insert the same value for all samples in the 
 group column in the \emph{pheno} file and run Amelia II - Independent groups - 
@@ -620,9 +629,9 @@ Usually, anti-body controls are performed to control for unspecific binding.
 The easiest way to quickly assess the levels of the protein is to plot the
 protein intensities in the MS data (Figure \ref{figure/bait}).
 
-<<bait, fig.width=6, fig.height=5, results='hide', warning=FALSE>>=
-par(oma=c(2,2,2,2))
-plotExpression(data.imputed, "Q92974", main="ARHGEF2") 
+<<bait, fig.width=6, fig.height=6, results='hide', warning=FALSE>>=
+par(oma=c(4,4,4,4))
+plotExpression(data.imputed, "Q92974")
 @
 
 \incfig{figure/bait}{0.8\textwidth}{Bait control plot}{
@@ -642,7 +651,8 @@ data.complete <- completeCases(data.imputed)
 
 and the row count can be checked by
 <<nrowComplete>>=
-nrow(eset(data.complete, 1))
+after.imputation <- nrow(eset(data.complete, 1))
+after.imputation
 @
 
 
@@ -655,14 +665,14 @@ Therefore we can just fill the missing values with 0s. \emph{Note: This
 approach has to be complemented by other analysis and the interpretation 
 has to be adjusted. A logFC between a 0 value condition and a real value
 condition cannot be taken a statistical value, but merely it allows to
-easily filter out and interepret the e.g. > 10 logFC. Also the linear 
+easily filter out and interepret the e.g. \textgreater 10 logFC. Also the linear 
 model can vary when the model is built on this filled data set. Therefore
 always do a compelete case analysis as well.} However, this approach is a
 very quick and convient way to analyse and assess the whole data once the
 biological interpretation is clear.
 
 <<fillNAs>>=
-data.filled <- fillNAs(data.imputed, 0) # TODO
+data.filled <- fillNAsWithValues(data.imputed, 0) 
 nrow(eset(data.filled, 1))  
 @
 
@@ -675,7 +685,7 @@ with this issue using the multiple imputation approach. \Rpackage{limma}
 is extremely flexible, if you have no experience with \Rpackage{limma},
 please go and have a look at their extremely well documented vignette. 
 
-\limmas uses linear models to do the statistical analysis on the 
+\limmas  uses linear models to do the statistical analysis on the 
 \emph{m} different imputed data sets. Linear models can be used 
 for multifactorial designs which become more popular with the 
 current developments in the MS field. Also, e.g. batch effects 
@@ -684,7 +694,7 @@ can be modeled in in the statistical analysis.
 After using linear models on the \emph{m} imputed data sets, the 
 results have to be statistically \emph{pooled}. This is important 
 to adjust for in-between and across data set variablity.
-In \Rpackage{limmas}, we provide these functionality for 
+In \Rpackage{limmas}, we included this functionality for 
 easy pooling of the results.
 
 \subsection{The design matrix}
@@ -693,29 +703,173 @@ basic concept is well documented in the \Rpackage{limma} vignette.
 Here an example is giving where the model is fitted on group and
 batches.
 
-<<fillNAs>>=
-p <- pData(data.imputed)
+<<designMatrix>>=
+p      <- pData(data.imputed)
 design <- model.matrix(~0 + p$groups + p$batch, data=p) 
 colnames(design) <- c(levels(p$groups), levels(p$batch)[-1])
-design
 @
 
-\subsection{Fitting the model} 
-Now we fit the model for each imputed data set 
+\subsection{Statistics for the complete data set} 
+Now we fit the model for each imputed data set, pool the results, do 
+the significance testing, multiple hypothesis testing correction,
+and display the top results from the first contrast - Gefh1 versus Control.
 in \Rpackage{limma} fashion.
 
 <<fitting, warning=FALSE>>=
-fit.imputed <- limmasFit(data.filled, design)
-fit.contrast <- contrastFit(fit.imputed, c("Gefh1 - Control", "Gefh1Inhib - Control"))
+fit <- limmasFit(data.complete, design)
+fit <- combineFits(contrastFit(fit, c("Gefh1 - Control",
+                                      "Gefh1Inhib - Control", 
+                                      "Gefh1Inhib - Gefh1")))
 
-fit.filter <- combineFits()
-tt.spec.gefh1 <- getSignificantFeatures(fit.filter, coef=1)
-nrow(tt.spec.gefh1)
+topTableImpute(fit, n=5, coef=1) 
 @
 
-\emph{Note: When you fill in the same values for NAs, \Rpackage{limma} will return a
-Warning, which is expected.
+\emph{Note: If you have filled in values for NAs, \Rpackage{limma} can return a
+Warning, which is expected.}
+
+To retrieve the significant results for all different contrasts:  
+
+<<significantFeatures, warning=FALSE>>=
+res.complete <- list()
+res.complete[["gefh1"]]         <- getSignificantFeatures(fit, coef=1, p.value=0.05)
+res.complete[["gefh1inhib"]]    <- getSignificantFeatures(fit, coef=2, p.value=0.05)
+res.complete[["inhib.vs.gefh1"]]<- getSignificantFeatures(fit, coef=3, p.value=0.05)
+
+lapply(res.complete, nrow)
+@
+
+Since we have control samples, we want to filter, the results for significantly
+higher expression and \textgreater 0.5 logFC in samples versus controls.
+<<featureFilter, warning=FALSE>>=
+res.complete.filter <- unique(unlist(lapply(c("gefh1", "gefh1inhib"), function(x) {
+   rownames(res.complete[[x]][res.complete[[x]][,"logFC"] > 0.5,])
+})))
+
+sig.complete <- res.complete[["inhib.vs.gefh1"]][
+                       rownames(res.complete[["inhib.vs.gefh1"]]) 
+                                                    %in% res.complete.filter,]
+nrow(sig.complete)
+head(sig.complete)
+@
+
+Four proteins are significantly expressed between the two conditions
+as well as compared to the control in the complete data set. We plot 
+the top result (Figure \ref{figure/completeTop}).
+
+<<completeTop, fig.width=6, fig.height=6, results='hide', warning=FALSE>>=
+par(oma=c(4,4,4,4))
+plotExpression(data.complete, as.numeric(rownames(sig.complete[1,])))
+@
+
+\incfig{figure/completeTop}{0.8\textwidth}{Top expressed in the complete data set}{
 }
 
 
+When a sample contains multiple data points, this means it was imputed.
+Then it did not have any values but it was filled up by the 
+multiple imputation m times. Other samples with only one data point have
+real values.
+
+\subsection{Statistics for the filled data set} 
+
+The same analysis can be performed with the filled data set, however
+it is important to be sure of the interpretation of the results. 
+<<fittingFilled, warning=FALSE>>=
+fit <- limmasFit(data.filled, design)
+fit <- combineFits(contrastFit(fit, c("Gefh1 - Control",
+                                      "Gefh1Inhib - Control", 
+                                      "Gefh1Inhib - Gefh1")))
+res.filled <- list()
+res.filled[["gefh1"]]         <- getSignificantFeatures(fit, coef=1, p.value=0.05)
+res.filled[["gefh1inhib"]]    <- getSignificantFeatures(fit, coef=2, p.value=0.05)
+res.filled[["inhib.vs.gefh1"]]<- getSignificantFeatures(fit, coef=3, p.value=0.05)
+
+lapply(res.filled, nrow)
+@
+\emph{Note: If you have filled in values for NAs, \Rpackage{limma} can return a
+Warning, which is expected.}
+
+As above, we filter the results upregulation compared to the control
+
+<<featureFilterFilled, warning=FALSE>>=
+res.filled.filter <- unique(unlist(lapply(c("gefh1", "gefh1inhib"), function(x) {
+   rownames(res.filled[[x]][res.filled[[x]][,"logFC"] > 0.5,])
+})))
+
+sig.filled <- res.filled[["inhib.vs.gefh1"]][
+             rownames(res.filled[["inhib.vs.gefh1"]]) %in% res.filled.filter,]
+
+nrow(sig.filled)
+head(sig.filled, n=5)
+@
+
+This time we get 41 proteins significantly expressed between the groups. 
+Now we plot the top result. In Figure \ref{figure/filledTop} it is nicely shown
+that the protein is abundant in one condition and not abundant in 
+the control or inhibitor condition at all. \emph{Note: In reality, the samples
+with intensities of zero are under the detection limit and not necessarily
+zero!}
+
+<<filledTop, fig.width=6, fig.height=6, results='hide', warning=FALSE>>=
+par(oma=c(4,4,4,4))
+plotExpression(data.filled, as.numeric(rownames(sig.filled[1,])))
+@
+
+\incfig{figure/filledTop}{0.8\textwidth}{Top expressed in filled data set }{
+}
+
+To sum this up, if the features have values for each sample (are complete), 
+then you want to use the model fit of the complete data set, as the 
+filled in model gives an approximation. However, it is extremely useful 
+to filter for genes which are up in one condition and for example
+under the detection limit in the other condition.
+
+Now it is time for some remaining stats on the data set.
+
+Amount of complete rows before the imputation
+<<beforeImp>>= 
+before.imputation 
+@
+
+Amount of complete rows after the imputation
+<<afterImp>>= 
+after.imputation 
+@
+
+The biggest differences in the gefh1 and the gefh1 inhibitor are detected by
+looking at the data set with filled values. With our approach we 
+can estimate that those are most likely not missing by chance and 
+biologically might be most important. 
+
+<<stats>>=
+stats <- t(data.frame(sapply(c("gefh1", "gefh1inhib", "inhib.vs.gefh1"), function(x) {
+    return(c(nrow(res.complete[[x]]),
+             nrow(res.filled[[x]]),
+             nrow(res.filled[[x]])/nrow(res.complete[[x]]),
+             sum(rownames(res.filled[[x]]) %in% rownames(res.complete[[x]])),
+             sum(rownames(res.complete[[x]]) %in% rownames(res.filled[[x]]))))
+}), row.names = c("complete", "filled", "ratio",
+                  "filled.in.complete", "complete.in.filled")))
+
+stats
+
+@
+
+\section{Closing words}
+This package was developed to analyse (label-free) quantitative MS data, however 
+it can be used to analyse any data set with missing values. It was designed
+for a flexibel use and its focus is on the biological interpretation of the 
+results. 
+
+Further modelling and statistical adjustments to fit models with 0 value offsets
+will improve the package. We are interested in improving the package and making
+the analysis of mass spectrometry data sets easy and especially well documented
+and not "black-boxy". Please send comments, feedback, and suggestions,
+or maybe a thanks to \texttt{schwarzl@embl.de}.
+
+Thank you very much for using \limmas.
+
+\subsection{Acknowledgement}
+Thanks to Alex von Kriegsheim and David Gomez with providing mass spec knowledge
+and experimental data as well as Ente Tiger.
 \end{document}
