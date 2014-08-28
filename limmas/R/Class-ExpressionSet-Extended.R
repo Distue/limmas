@@ -157,6 +157,69 @@ setMethod("scaleData", "ExpressionSet",
 
 
 # -----------------------------------------------------------
+# Detection limit
+# -----------------------------------------------------------
+
+
+setGeneric(".getGroupData", function(data, group, ...) standardGeneric(".getGroupData"))
+setMethod(".getGroupData", "ExpressionSet",
+      function(data, group, groupCol="groups", ...) { 
+         groupData <- exprs(data.transformed)[,rownames(pData(data)[pData(data.transformed)[,groupCol] == group,])]
+         groupData <- groupData[!apply(groupData, 1, function(y) { all(is.na(y)) }),]
+         medianExpression <- apply(groupData, 1, function(y) { median(y, na.rm = T)})
+         order <- order(medianExpression)
+         groupData <- groupData[order,]
+         medianExpression <- medianExpression[order]
+         naCount <- apply(groupData, 1, function(y) { sum(is.na(y)) })
+         na.max <- max(naCount)
+         na.min <- 0
+         na.vec <- na.min:na.max
+         na.count <- unlist(lapply(na.vec, function(z) { sum(naCount==z) }))
+         i.max <- max(groupData, na.rm = TRUE)
+         i.min <- min(groupData, na.rm = TRUE)
+         
+         ret <- list()
+         ret[["groupData"]] <- groupData
+         ret[["medianExpression"]] <- medianExpression
+         ret[["naCount"]] <- naCount
+         ret[["na.max"]] <- na.max
+         ret[["na.min"]] <- na.min
+         ret[["na.vec"]] <- na.vec
+         ret[["na.count"]] <- na.count
+         ret[["i.max"]] <- i.max
+         ret[["i.min"]] <- i.min
+         return(ret)
+})
+
+setGeneric("plotNAs", function(data, group, ...) standardGeneric("plotNAs"))
+setMethod("plotNAs", "ExpressionSet",
+          function(data, group, groupCol="groups", ...) {  
+             g <- .getGroupData(data.transformed, group=group, groupCol=groupCol)
+             
+         plot(g[["medianExpression"]], g[["naCount"]],
+           main = paste(group, " (", ncol(g[["groupData"]]), " samples)", sep=""),
+           ylab = "NA count",
+           xlab = "median expression",
+           type = "p",
+           cex  = 0.2)
+          })
+
+
+setGeneric("plotNAhistogram", function(data, group, ...) standardGeneric("plotNAhistogram"))
+setMethod("plotNAhistogram", "ExpressionSet",
+          function(data, group, groupCol="groups", ...) {     
+         g <- .getGroupData(data.transformed, group=group, groupCol=groupCol)
+         plots <- lapply(g[["na.vec"]], function(z) { density(g[["medianExpression"]][g[["naCount"]] == as.numeric(z)]) }) 
+         d.max <- max(unlist(lapply(plots, function(z) { max(z$y) })))
+         colvec <- rainbow(g[["na.max"]] + 1)
+         plot(plots[[1]], col=colvec[1], lwd=3,
+              main = paste("# NAs for group ", group, sep=""),
+              xlim = c(g[["i.min"]], g[["i.max"]]), ylim = c(0, d.max))
+         zz <- lapply(1:(g[["na.max"]]), function(z) { lines(plots[[z+1]], col=colvec[z + 1], lwd=3) })
+         legend("topright", "# NAs", paste(g[["na.vec"]], " (", g[["na.count"]], " features)", sep=""), fill = colvec,  )
+})
+
+# -----------------------------------------------------------
 # imputation
 # -----------------------------------------------------------
 

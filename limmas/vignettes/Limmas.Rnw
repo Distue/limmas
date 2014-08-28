@@ -342,7 +342,7 @@ nrow(data)
 @
 
 %------------------------------------------------------------
-\section{Check missingness}
+\section{Check complete rows}
 %------------------------------------------------------------
 
 Of great interest for the user and for the purpose of MI is the degree of missingness across the data set. The median percentage of missing data in each sample can be checked using \Rfunction{checkMissingness(data)}:
@@ -356,16 +356,6 @@ The number of missing value-free rows across samples can also be determined by c
 <<checkCompleteRows>>=
 before.imputation <- checkCompleteRows(data)
 before.imputation 
-@
-
-
-Missing values within a MS data set are the result of random or systematic detection errors. It is therefore often hard to determine, especially for proteins close to the detection limit, whether an entity is truly missing or simply not recorded. 
-
-Knowing how likely any protein entity is missing in a given sample is therefore a useful insight that aids in the decision of pinpointing a threshold for true negative detection. This can be accomplished utilising the function \Rfunction{getMaxProbabilityMissingByChance(data, "groups", 3)}. This command calculates the maximum probability of any number of observed values being missing by chance in all groups of replicates, whereby the argument ‘groups’ determines the column in the pheno file that defines individual groups; the number of missing values can be specified with a number \geq number of replicates.
-
-<<getMaxProbabilityMissingByChance>>=
-#TODO
-# getMaxProbabilityMissingByChance(data, "groups", 3)
 @
 
 %------------------------------------------------------------
@@ -453,8 +443,52 @@ for(i in 1:9) {
 
 
 \incfig{figure/qqnorm}{\textwidth}{QQplots of all samples}{
-
 }
+
+
+
+%------------------------------------------------------------
+\section{Check detection limit}
+%------------------------------------------------------------
+
+Missing values within a MS data set are the result of random or systematic
+detection errors. It is therefore often hard to determine, especially for
+proteins close to the detection limit, whether an entity is truly missing
+or simply not recorded. 
+
+Knowing how likely any protein entity is missing in a given sample is
+therefore a useful insight that aids in the decision of pinpointing a
+threshold for true negative detection. 
+
+Replicates can be used to determine missing values introduced by random errors. 
+Those can be filled up statistically with imputation methods. Then we are
+left with missing values due to the left cencoring caused by the detection limit.
+
+But that is okay, because biologically, we often want to know if the protein 
+is \emph{higher} abundant than the not detected protein. Therefore we estimate
+the percentage of non-detection with following method.
+
+<<NAhist, fig.width=5, fig.height=5>>=
+par(mfrow=c(2,2))
+lapply(levels(pData(data.transformed)[,"groups"]), function (x) { 
+   plotNAhistogram(data.transformed, group = x, groupCol = "groups")
+})  
+@
+
+
+\incfig{figure/NAhist}{\textwidth}{Histograms of missing value occurances.}{
+}
+
+
+This can be accomplished utilising
+the function \Rfunction{getMaxProbabilityMissingByChance(data, "groups", 3)}.
+This command calculates the maximum probability of any number of observed
+values being missing by chance in all groups of replicates, whereby the argument ‘groups’ determines the column in the pheno file that defines individual groups; the number of missing values can be specified with a number \geq number of replicates.
+
+<<getMaxProbabilityMissingByChance>>=
+#TODO
+# getMaxProbabilityMissingByChance(data, "groups", 3)
+@
 
 %------------------------------------------------------------
 \section{Multiple Imputation}
@@ -512,7 +546,7 @@ Importantly, the parameter \Robject{minTotalPresent} specifies
 the number of observed values required by the user in each set
 of replicates (group). The following rationale underlies this
 step: For any specific protein and for each group, if \emph{number
-of observed values \geq minTotalPresent}, then both the present
+of observed values \textgreater=  minTotalPresent }, then both the present
 and missing values remain unaltered and can be imputed. If however
 \emph{number of observed values < minTotalPresent}, all values for
 that protein in that particular group are replaced by NA values 
