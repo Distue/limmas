@@ -12,10 +12,10 @@
 #' @rdname SmartAnnotatedDataFrame
 #' @export
 setClass("SmartAnnotatedDataFrame",
-         representation(sampleNamesCol="character",
-                        originalNamesCol="character"
+         representation(sampleNamesCol   = "character",
+                        originalNamesCol = "character"
          ),
-         contains="AnnotatedDataFrame",
+         contains = "AnnotatedDataFrame",
 )
 
 # This class contains m different ExpressionSets
@@ -24,13 +24,14 @@ setClass("SmartAnnotatedDataFrame",
 #' @export
 setClass("MImputedExpressionSets",
          representation=representation(
-            data="list",
-            groupingCol="character",
-            minPercentPresent="numeric",
-            minTotalPresent="numeric",
-            numberImputations="numeric",
-            originalData="ExpressionSet")
+            data                 = "list",
+            groupingCol          = "character",
+            minPresent           = "numeric",
+            numberImputations    = "numeric",
+            originalData         = "ExpressionSet",
+            groupData            = "list")
 )
+
 
 # This class manages a list of MArrayLM object (from limma) for 
 # each imputated data set

@@ -50,6 +50,16 @@ setMethod("contrastFit", "MImputedMArrayLM", function(fit, contrasts) {
    return(fit)
 })
 
+setGeneric("contrastLimit", function(fit, contrasts) standardGeneric("contrastLimit"))
+setMethod("contrastLimit", "MImputedMArrayLM", function(fit, contrasts) {
+   # for each contrast, get the detection limits
+   fit@data <- lapply(fit@data, function(x) {
+      return(eBayes(contrasts.fit(x, contrastMatrix)))
+   })  
+   
+   return(fit)
+})
+
 
 setGeneric("vsFit", function(fit, design, vs) standardGeneric("vsFit"))
 setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="character"), function(fit, design, vs) { 

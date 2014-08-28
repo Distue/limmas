@@ -752,9 +752,10 @@ in \Rpackage{limma} fashion.
 
 <<fitting, warning=FALSE>>=
 fit <- limmasFit(data.complete, design)
-fit <- combineFits(contrastFit(fit, c("Gefh1 - Control",
-                                      "Gefh1Inhib - Control", 
-                                      "Gefh1Inhib - Gefh1")))
+contrasts <- c("Gefh1 - Control",
+               "Gefh1Inhib - Control", 
+               "Gefh1Inhib - Gefh1")
+fit <- combineFits(contrastFit(fit, contrasts))
 
 topTableImpute(fit, n=5, coef=1) 
 @

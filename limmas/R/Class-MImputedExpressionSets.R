@@ -2,15 +2,6 @@
 # Class MImputedExpressionSets
 # holds ExpressionSets of multiple imputed data
 # --------------------------------------------------------
-setClass("MImputedExpressionSets",
-            representation=representation(
-            data="list",
-            groupingCol="character",
-            minPresent="numeric",
-            numberImputations="numeric",
-            originalData="ExpressionSet")
-         )
-            
 
 # assertions
 setValidity("MImputedExpressionSets", function(object) {
@@ -111,6 +102,8 @@ setMethod("intensities", "MImputedExpressionSets", function(object, imputation) 
 setGeneric("limmasFit", function(object, design) standardGeneric("limmasFit"))
 setMethod("limmasFit", "MImputedExpressionSets", function(object, design) {
    return(new("MImputedMArrayLM", data=lapply(object@data, function(x) {
+      # This is needed so Limma ignores NAs for building a model
+      exprs(x)[is.na(exprs(x))] <- NaN
       fit  <- lmFit(x, design)
    })))
 })
@@ -242,3 +235,26 @@ setMethod("[", "MImputedExpressionSets", function(x,i,j, ..., drop = TRUE) {
    return(x)
 })
 
+
+setGeneric(".calcGroupEstimations", function(object) standardGeneric("calcGroupEstimations"))
+setMethod(".calcGroupEstimations", "MImputedExpressionSets", function(object) {
+    # for each group, calculate the estimates
+    object@groupData <- lapply(levels(pData(object@originalData)[,groupingCol]),
+                               function(x) { 
+                                     getGroupData(object@originalData,
+                                                  group = x,
+                                                  groupCol = object@groupingCol)
+                               })
+    
+})
+
+
+setGeneric(".calcGroupEstimations", function(object) standardGeneric("calcGroupEstimations"))
+setMethod(".calcGroupEstimations", "MImputedExpressionSets", function(object) {
+   if(is.null(object@groupData)) { 
+      .calcGroupEstimations(object)
+   }
+   
+   
+   
+})
