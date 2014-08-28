@@ -312,7 +312,7 @@ setMethod("imputeIndependentGroupsWithAmelia", "ExpressionSet", function(data.in
    returnList[["data"]] <- imp.output
    returnList[["imputation"]] <- imputations
    return(returnList)
-})
+
 
 
 # -----------------------------------------------------------

@@ -248,13 +248,23 @@ setMethod(".calcGroupEstimations", "MImputedExpressionSets", function(object) {
     
 })
 
-
-setGeneric(".calcGroupEstimations", function(object) standardGeneric("calcGroupEstimations"))
-setMethod(".calcGroupEstimations", "MImputedExpressionSets", function(object) {
-   if(is.null(object@groupData)) { 
+setGeneric("estimateLimits", function(object) standardGeneric("estimateLimits"))
+setMethod("estimateLimits", "MImputedExpressionSets", function(object, design, contrasts) {
+   #if(is.null(object@groupData)) { 
       .calcGroupEstimations(object)
-   }
+   #}
    
+   contrastMatrix <- makeContrasts(contrasts=contrasts, levels=design)
+   apply(contrastMatrix, 2, function(x) { 
+      if(length(unique(x)) > 2 || length(x[x=="-1"] != 1) || length(x[x=="1"] != 1)) {
+         stop("Only two conditions can be compared directly at this point.
+               Comparison of multiple conditions will be provided in future
+               versions. If you want to contribute to this package, please
+               contact the authors. Thank you.")
+      }
+   })
+
+
    
    
 })

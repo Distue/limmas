@@ -756,7 +756,6 @@ contrasts <- c("Gefh1 - Control",
                "Gefh1Inhib - Control", 
                "Gefh1Inhib - Gefh1")
 fit <- combineFits(contrastFit(fit, contrasts))
-
 topTableImpute(fit, n=5, coef=1) 
 @
 
@@ -788,6 +787,11 @@ nrow(sig.complete)
 head(sig.complete)
 @
 
+
+<<estimation>>=
+fit <- estimateLimits(data.complete, design, contrasts)
+
+@ 
 Four proteins are significantly expressed between the two conditions
 as well as compared to the control in the complete data set. We plot 
 the top result (Figure \ref{figure/completeTop}).
