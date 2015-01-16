@@ -11,8 +11,9 @@
 \documentclass[12pt]{article}
 
 
-\newcommand{\limmas}{\textit{limmas}}
+\newcommand{\Rpackage{limmas}}{\textit{limmas}}
 \newcommand{\lowtilde}{\raise.17ex\hbox{$\scriptstyle\mathtt{\sim}$}}
+
 
 <<knitr, echo=FALSE, results="hide">>=
 library("knitr")
@@ -30,6 +31,9 @@ opts_chunk$set(tidy = FALSE,
 <<style, eval=TRUE, echo=FALSE, results="asis">>=
 BiocStyle::latex()
 @
+
+\begin{document}
+
 
 <<loadlimmas, echo=FALSE>>=
 library("limmas")
@@ -306,11 +310,13 @@ Three filtering steps strip the raw data from unwanted protein entries, includin
 \subsection{Peptide Filter}
 %------------------------------------------------------------
 
-\Rfunction{peptideFilter} represents the first filtering step. This function removes all protein entries of an object of the class \Robject{ExpressionSet}, which are characterised by a peptide count smaller than or equal to a user-defined cut-off in the column named ``peptides''. This column contains the maximum amount of peptides for a given proteins found in any sample.
+\Rfunction{peptideFilter} represents the first filtering step. This function removes all protein entries of an object of the class \Robject{ExpressionSet}, which are characterised by a peptide count smaller than or equal to a user-defined cut-off in the column named ``peptides''. This column contains the maximum amount of peptides for given proteins found in any sample. \Robject{peptideColumns} specifies in which columns the peptide information is stored, that can be a single or multiple columns. \Robject{method} defines if the peptide count has to '''greater''' the
+\Robject{peptideCutoff} in '''all''' or in '''any''' of the columns specified in \Robject{peptideColumns}.
+
 
 <<peptideFilter>>=
 nrow(data)
-data <- peptideFilter(data, peptideCutoff=1, peptideColumn="Peptides")
+data <- peptideFilter(data, peptideCutoff=1, peptideColumns=c("Peptides"), method="any")
 nrow(data)
 @
 
@@ -342,21 +348,67 @@ nrow(data)
 @
 
 %------------------------------------------------------------
-\section{Check complete rows}
+\section{QC before preprocessing}
 %------------------------------------------------------------
 
-Of great interest for the user and for the purpose of MI is the degree of missingness across the data set. The median percentage of missing data in each sample can be checked using \Rfunction{checkMissingness(data)}:
+%------------------------------------------------------------
+\subsection{Correlation}
+%------------------------------------------------------------
+Correlations between samples can easily be calculated 
+using \Rfunction{calculateFeatureCorrelations}.
 
-<<checkMissingness>>=
-checkMissingness(data)
+<<correlationBeforeQC>>=
+calculateFeatureCorrelations(data)
 @
 
-The number of missing value-free rows across samples can also be determined by calling\\ \Rfunction{checkCompleteRows(data)}
+%------------------------------------------------------------
+\subsection{Histogram}
+%------------------------------------------------------------
+
+With \Rfunction{hist} we can create a histogram of the 
+non-missing values before the 
+normalization (Figure \ref{figure/histBeforeQC}).
+
+<<histBeforeQC, fig.width=6, fig.height=6, results='hide'>>=
+hist(data)
+@
+
+\incfig{figure/histBeforeQC}{0.6\textwidth}{Histogram before QC}{
+}
+
+
+%------------------------------------------------------------
+\subsection{Boxplot}
+%------------------------------------------------------------
+
+\Rfunction{boxplotBeforeQC} will create a barchart for our data
+set before the preprossing (Figure \ref{figure/boxplotBeforeQC}).
+
+<<boxplotBeforeQC, fig.width=6, fig.height=6, results='hide'>>=
+boxplot(data)
+@
+
+\incfig{figure/boxplotBeforeQC}{0.6\textwidth}{Barchart before QC}{
+}
+
+%------------------------------------------------------------
+\subsection{Complete Rows}
+%------------------------------------------------------------
+
+Of great interest for the user and for the purpose of MI is the degree of completeness of the data set. The number of missing value-free rows across samples can  be determined by calling\\ \Rfunction{checkCompleteRows(data)}
 
 <<checkCompleteRows>>=
 before.imputation <- checkCompleteRows(data)
 before.imputation 
 @
+
+In contrary, the median missingness across the data set provides a crude overview of missing data in each sample. This can be checked with \Rfunction{checkMissingness(data)}:
+
+<<checkMissingness>>=
+checkMissingness(data)
+@
+
+A better overview is provided using the visual representation of missingness will be later used in \ref{sec:Detection limit}. Before this, we will preprocess the data.
 
 %------------------------------------------------------------
 \section{Preprocessing}
@@ -399,7 +451,7 @@ boxplot(transformData(data))
 @
 
 Eventually, you want to subset the data to normalize the controls and samples 
-separately. The use of \Rclass{ExpressionSet} in \limmas provides a very flexible
+separately. The use of \Rclass{ExpressionSet} in \Rpackage{limmas} provides a very flexible
 data structure to adapt to different data set properties.
 
 The function \Rfunction{scaleData} scales down the protein intensity values by dividing them by a user-defined scalefactor argument (here chosen to be 1000).
@@ -424,6 +476,14 @@ data.transformed <- transformData(data.scaled,
                                    })
 @
 
+%------------------------------------------------------------
+\section{QC after preprocessing}
+%------------------------------------------------------------
+
+%------------------------------------------------------------
+\subsection{Normality}
+%------------------------------------------------------------
+
 Normality is checked using normal quantile-quantile (Q-Q) plots. A 45 degree diagonal from left bottom to top 
 right would mean a perfectly normal distributed sample as shown in Figure \ref{figure/qqnorm}.
 Alternatively, a Shapiro-Wilk test could be performed.
@@ -446,9 +506,47 @@ for(i in 1:9) {
 }
 
 
+%------------------------------------------------------------
+\subsection{Correlation}
+%------------------------------------------------------------
+Correlations between samples can easily be calculated 
+using \Rfunction{calculateFeatureCorrelations}.
+
+<<correlationAfterQC>>=
+calculateFeatureCorrelations(data)
+@
 
 %------------------------------------------------------------
-\section{Check detection limit}
+\subsection{Histogram}
+%------------------------------------------------------------
+
+With \Rfunction{hist} we can create a histogram after the 
+normalization (Figure \ref{figure/histAfterQC}).
+
+<<histAfterQC, fig.width=6, fig.height=6, results='hide'>>=
+hist(data)
+@
+
+\incfig{figure/histAfterQC}{0.6\textwidth}{Histogram after QC}{
+}
+
+
+%------------------------------------------------------------
+\subsection{Boxplot}
+%------------------------------------------------------------
+
+\Rfunction{boxplotAfterQC} will create a barchart for our data
+set after the preprossing (Figure \ref{figure/boxplotAfterQC}).
+
+<<boxplotAfterQC, fig.width=6, fig.height=6, results='hide'>>=
+boxplot(data)
+@
+
+\incfig{figure/boxplotAfterQC}{0.6\textwidth}{Barchart after QC}{
+}
+
+%------------------------------------------------------------
+\section{Detection limit}
 %------------------------------------------------------------
 
 Missing values within a MS data set are the result of random or systematic
@@ -471,10 +569,9 @@ the percentage of non-detection with following method.
 <<NAhist, fig.width=5, fig.height=5>>=
 par(mfrow=c(2,2))
 lapply(levels(pData(data.transformed)[,"groups"]), function (x) { 
-   plotNAhistogram(data.transformed, group = x, groupCol = "groups")
+   plotNAdensity(data.transformed, group = x, groupCol = "groups")
 })  
 @
-
 
 \incfig{figure/NAhist}{\textwidth}{Histograms of missing value occurances.}{
 }
@@ -500,7 +597,7 @@ values (statistically generated filled in gaps) reflect the variance of the
 real data set {Ref}. This is in particular important for high-throughput 
 experiments with replicates.
 
-\limmas uses the \Rpackage{Amelia II} R package for the multiple imputation,
+\Rpackage{limmas} uses the \Rpackage{Amelia II} R package for the multiple imputation,
 however it can be substituted for any multiple imputation algorithm can be used.
 The input is an \Rclass{ExpressionSet} object and the output is an
 \Rclass{MImputedExpressionSet} object. The \Rclass{MImputedExpressionSet} object
@@ -642,7 +739,7 @@ can be explored as follows:
 
 \subsection{Amelia II - no groups} 
 
-\limmas  will be extended in the future to include other imputation methods 
+\Rpackage{limmas}  will be extended in the future to include other imputation methods 
 and variants. If you want to impute over the whole data set without 
 group associations, then just insert the same value for all samples in the 
 group column in the \emph{pheno} file and run Amelia II - Independent groups - 
@@ -712,7 +809,7 @@ nrow(eset(data.filled, 1))
 @
 
 \section{Analysis}
-For the statistical analysis, \limmas  makes use of the fantastic
+For the statistical analysis, \Rpackage{limmas}  makes use of the fantastic
 linear models for microarray (\Rpackage{limma}) package. The 
 analysis of MS data is very similar to microarray analysis, 
 except the problem with the missing values in MS data. We cope 
@@ -720,7 +817,7 @@ with this issue using the multiple imputation approach. \Rpackage{limma}
 is extremely flexible, if you have no experience with \Rpackage{limma},
 please go and have a look at their extremely well documented vignette. 
 
-\limmas  uses linear models to do the statistical analysis on the 
+\Rpackage{limmas}  uses linear models to do the statistical analysis on the 
 \emph{m} different imputed data sets. Linear models can be used 
 for multifactorial designs which become more popular with the 
 current developments in the MS field. Also, e.g. batch effects 
@@ -751,6 +848,7 @@ and display the top results from the first contrast - Gefh1 versus Control.
 in \Rpackage{limma} fashion.
 
 <<fitting, warning=FALSE>>=
+
 fit <- limmasFit(data.complete, design)
 contrasts <- c("Gefh1 - Control",
                "Gefh1Inhib - Control", 
@@ -758,6 +856,18 @@ contrasts <- c("Gefh1 - Control",
 fit <- combineFits(contrastFit(fit, contrasts))
 topTableImpute(fit, n=5, coef=1) 
 @
+
+<<estimation, eval=FALSE>>=
+
+fit <- limmasFit(data.imputed, design)
+contrasts <- c("Gefh1 - Control",
+               "Gefh1Inhib - Control", 
+               "Gefh1Inhib - Gefh1")
+fit <- combineFits(contrastFit(fit, contrasts))
+
+fit <- estimateLimits(data.complete, design, contrasts)
+
+@ 
 
 \emph{Note: If you have filled in values for NAs, \Rpackage{limma} can return a
 warning, which is expected.}
@@ -775,6 +885,7 @@ lapply(res.complete, nrow)
 
 Since we have control samples, we want to filter, the results for significantly
 higher expression and \textgreater 0.5 logFC in samples versus controls.
+
 <<featureFilter, warning=FALSE>>=
 res.complete.filter <- unique(unlist(lapply(c("gefh1", "gefh1inhib"), function(x) {
    rownames(res.complete[[x]][res.complete[[x]][,"logFC"] > 0.5,])
@@ -787,11 +898,6 @@ nrow(sig.complete)
 head(sig.complete)
 @
 
-
-<<estimation>>=
-fit <- estimateLimits(data.complete, design, contrasts)
-
-@ 
 Four proteins are significantly expressed between the two conditions
 as well as compared to the control in the complete data set. We plot 
 the top result (Figure \ref{figure/completeTop}).
@@ -892,7 +998,6 @@ stats <- t(data.frame(sapply(c("gefh1", "gefh1inhib", "inhib.vs.gefh1"), functio
                   "filled.in.complete", "complete.in.filled")))
 
 stats
-
 @
 
 \section{Closing words}
@@ -901,15 +1006,14 @@ it can be used to analyse any data set with missing values. It was designed
 for a flexibel use and its focus is on the biological interpretation of the 
 results. 
 
-Further modelling and statistical adjustments to fit models with 0 value offsets
-will improve the package. We are interested in improving the package and making
+We are interested in improving the package and making
 the analysis of mass spectrometry data sets easy and especially well documented
 and not "black-boxy". Please send comments, feedback, and suggestions,
 or maybe a thanks to \texttt{schwarzl@embl.de}.
 
-Thank you very much for using \limmas.
+Thank you very much for using \Rpackage{limmas}.
 
 \subsection{Acknowledgement}
-Thanks to Alex von Kriegsheim and David Gomez with providing mass spec knowledge
+Special thanks to Alex von Kriegsheim and David Gomez with providing mass spec knowledge
 and experimental data as well as Ente Tiger.
 \end{document}

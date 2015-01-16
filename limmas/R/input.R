@@ -90,10 +90,3 @@ createExpressionSet <- function(intensities, pheno, features, annotation, ...) {
    }
    return(new("ExpressionSet", exprs=intensities, phenoData=pheno, featureData=features, annotation=annotation, ...))
 }
-
-
-
-# ------------------------------------------
-# private functions
-# ------------------------------------------
-
