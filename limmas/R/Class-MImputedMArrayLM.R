@@ -1,29 +1,14 @@
 
-setGeneric("getData", function(object) standardGeneric("getData"))
+
 setMethod(f="getData", signature="MImputedMArrayLM", definition=function(object) {
    return(object@data)
 })
 
 
-setGeneric("getNumberImputations", function(object) standardGeneric("getNumberImputations"))
 setMethod(f="getNumberImputations", signature="MImputedMArrayLM", definition=function(object) {
    return(length(object@data))
 })
 
-
-# assertions
-setValidity("MImputedMArrayLM", function(object) {
-   msg <- NULL
-   
-   if(!all(unlist(lapply(object@data, function(x) is(x, "MArrayLM"))))) {
-      msg <- c(msg, "data list can only contain MArrayLM objects") 
-   }
-   if(!length(object@data) > 1) {
-      msg <- c(msg, "data list has to have more than one object") 
-   }
-   
-   if (is.null(msg)) TRUE else msg
-})            
 
 
 # setGeneric("data", function(object) standardGeneric("data"))
@@ -38,7 +23,7 @@ setValidity("MImputedMArrayLM", function(object) {
 # })
 
 
-setGeneric("contrastFit", function(fit, contrasts) standardGeneric("contrastFit"))
+
 setMethod("contrastFit", "MImputedMArrayLM", function(fit, contrasts) {
    contrastMatrix <- makeContrasts(contrasts=contrasts, levels=fit@data[[1]]$design)
    
@@ -50,7 +35,7 @@ setMethod("contrastFit", "MImputedMArrayLM", function(fit, contrasts) {
    return(fit)
 })
 
-setGeneric("contrastLimit", function(fit, contrasts) standardGeneric("contrastLimit"))
+
 setMethod("contrastLimit", "MImputedMArrayLM", function(fit, contrasts) {
    # for each contrast, get the detection limits
    fit@data <- lapply(fit@data, function(x) {
@@ -61,7 +46,6 @@ setMethod("contrastLimit", "MImputedMArrayLM", function(fit, contrasts) {
 })
 
 
-setGeneric("vsFit", function(fit, design, vs) standardGeneric("vsFit"))
 setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="character"), function(fit, design, vs) { 
    if (!vs %in% colnames(design)) {
       stop("'vs' is not a colname of design")
@@ -82,7 +66,7 @@ setMethod("checkMissingness", "MImputedMArrayLM", function(data) {
    checkMissingness(eset(data, 1))
 })
    
-setGeneric("combineFits", function(fit) standardGeneric("combineFits"))
+
 setMethod("combineFits", "MImputedMArrayLM", function(fit) {
    efit.list <- fit@data
    featurelist <- efit.list[[1]]$genes
