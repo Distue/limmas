@@ -717,5 +717,42 @@ if(!isGeneric("fillNAs"))
 if(!isGeneric("calculateFeatureCorrelations"))
    setGeneric("calculateFeatureCorrelations",  function(object, ...) standardGeneric("calculateFeatureCorrelations"))
 
+##' checkCompleteRows method generics
+##'
+##' @docType methods
+##' @name checkCompleteRows
+##' @rdname checkCompleteRows-methods
+##' @title  checkCompleteRows method
+##' @return results
+##' @export
+##' @author Thomas Schwarzl 
+if(!isGeneric("checkCompleteRows"))
+   setGeneric("checkCompleteRows", function(data, ...) standardGeneric("checkCompleteRows"))
+
+
+##' getIntensities method generics
+##'
+##' @docType methods
+##' @name getIntensities
+##' @rdname getIntensities-methods
+##' @title  getIntensities method
+##' @return results
+##' @export
+##' @author Thomas Schwarzl 
+if(!isGeneric("getIntensities"))
+   setGeneric("getIntensities", function(data, minIntensity) standardGeneric("getIntensities"))
+
+##' peptideFilter method generics
+##'
+##' @docType methods
+##' @name peptideFilter
+##' @rdname peptideFilter-methods
+##' @title  peptideFilter method
+##' @return results
+##' @export
+##' @author Thomas Schwarzl 
+if(!isGeneric("peptideFilter"))
+   setGeneric("peptideFilter", function(data, ...) standardGeneric("peptideFilter"))
+
 
 
