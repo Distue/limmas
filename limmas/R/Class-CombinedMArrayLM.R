@@ -127,13 +127,13 @@ setMethod("getSignificantFeatures", "CombinedMArrayLM", function(fit,
    return(tt)
 })
 
-
+##' @export
 setMethod("writeSignificantFeatures", c(fit="CombinedMArrayLM", file="character"), function(fit, file,  ...) {
    tt <- getSignificantFeatures(fit,  ...)
    write.table(tt, file=file, sep="\t", quote=F, row.names=F)
 })
 
-
+##' @export
 setMethod("getFeatureFilter", c(fit="CombinedMArrayLM", data="MImputedExpressionSets"), function(fit, data, p.value=0.05, adjust="BH", onlyPositive=T, onlyNegative=F, mode="or", ...) {
    ncoef <- ncol(fit@coefficients)
    
@@ -157,7 +157,7 @@ setMethod("getFeatureFilter", c(fit="CombinedMArrayLM", data="MImputedExpression
    return(differ)
 }) 
 
-     
+##' @export
 setMethod("filterFeatures", c(fit="CombinedMArrayLM", data="MImputedExpressionSets"), function(fit, data, ...) {
    return(data[getFeatureFilter(fit, data, ...),])
 })       

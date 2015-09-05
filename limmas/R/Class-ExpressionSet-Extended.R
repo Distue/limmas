@@ -1,6 +1,11 @@
 # Extend the Class ExpressionSet, allowing the functionality to be the same
 
-# Functions for filtering rows while maintaining data integrety
+
+##' Functions for filtering rows while maintaining data integrety
+##' 
+##' @param filter vector for filtering 
+##' @importClassesFrom Biobase ExpressionSet
+##' @export
 setMethod("filterRows", c(object="ExpressionSet", filter="logical"), function(object, filter) {
    object <- object[filter,]
    fData <- fData(object)[filter,]
@@ -8,18 +13,24 @@ setMethod("filterRows", c(object="ExpressionSet", filter="logical"), function(ob
    return(object)
 })
 
-# Functions for filtering columns while maintaining data integrety
+##' Functions for filtering columns while maintaining data integrety
+##' 
+##' @param filter vector for filtering 
+##' @importClassesFrom Biobase ExpressionSet
+##' @return filtered ExpressionSet
+##' @export
 setMethod("filterCols", c(object="ExpressionSet", filter="logical"), function(object, filter) {
    object <- object[,filter]
-   
    return(object)
 })
 
 
-# Missingness
-# function for calculating percentage of NAs per sample
-# data is ExpressionSet
-
+##' function for calculating percentage of NAs per sample
+##' 
+##' @param minIntensity minimal intensity cutoff 
+##' @return  percentage of missingness 
+##' @importClassesFrom Biobase ExpressionSet
+##' @export
 setMethod("checkMissingness", "ExpressionSet", function(data, minIntensity=0){
    intensities <- getIntensities(data, minIntensity=minIntensity)
    return(apply(intensities, 2, function(x) {
@@ -27,8 +38,12 @@ setMethod("checkMissingness", "ExpressionSet", function(data, minIntensity=0){
    }))
 })
 
-# function for checking the number of complete rows
-setGeneric("checkCompleteRows", function(data, ...) standardGeneric("checkCompleteRows"))
+##' function for checking the number of complete rows
+##' 
+##' @param minIntensity minimal intensity cutoff 
+##' @importClassesFrom Biobase ExpressionSet
+##' @return sum of complete rows
+##' @export
 setMethod("checkCompleteRows", "ExpressionSet", function(data, minIntensity=0) {
    intensities <- getIntensities(data, minIntensity=minIntensity)
    return(sum(apply(intensities, 1, function(x) {
@@ -37,7 +52,12 @@ setMethod("checkCompleteRows", "ExpressionSet", function(data, minIntensity=0) {
 })
 
 
-setGeneric("getIntensities", function(data, minIntensity) standardGeneric("getIntensities"))
+##' get intensities with above a certain min intensity cutoff
+##' 
+##' @param minIntensity minimal intensity cutoff 
+##' @importClassesFrom Biobase ExpressionSet
+##' @return intensities
+##' @export
 setMethod("getIntensities", c(data="ExpressionSet", minIntensity="numeric"), function(data, minIntensity) {
    if(minIntensity < 0) {
       stop("minIntensity cannot be smaller than 0.") 
@@ -55,9 +75,18 @@ setMethod("getIntensities", c(data="ExpressionSet", minIntensity="numeric"), fun
 # -----------------------------------------------------------
 
 
-#Peptide Filter: remove all probes where the peptide count is smaller than or equal to 1
-setGeneric("peptideFilter", function(data, ...) standardGeneric("peptideFilter"))
-setMethod("peptideFilter", "ExpressionSet", function (data, peptideCutoff=1, peptideColumns=c("Peptides"), method=c("any", "all")) {
+##' peptide filter
+##' 
+##' remove all probes where the peptide count is smaller than or equal to 1
+##' get intensities with above a certain min intensity cutoff
+##' 
+##' @param peptideCutoff minimal peptide cutoff
+##' @param peptideColumns columns having
+##' @param method function which is used for filtering
+##' @importClassesFrom Biobase ExpressionSet
+##' @return filtered ExpresionSet
+##' @export
+setMethod("peptideFilter", "ExpressionSet", function (data, peptideCutoff=1, peptideColumns=c("Peptides"), method=c(any, all)) {
    if(!class(data)[1] == "ExpressionSet") {
       stop("data is not an object of class ExpressionSet")
    }  
@@ -67,29 +96,37 @@ setMethod("peptideFilter", "ExpressionSet", function (data, peptideCutoff=1, pep
    if(length(peptideColumns) == 1) {
       filter <- fData(data)[,peptideColumns] > peptideCutoff
    } else { 
-      if(method == "any") { 
-          FUN <- any
-      } else if(method == "all") {
-          FUN <- all
-      } else {
-         stop("method must be either 'all' or 'any'")  
-      }
-      
-      filter <- unlist(apply(fData(data)[,peptideColumns], 1, function(x) { any(x) > peptideCutoff }))   
+      filter <- unlist(apply(fData(data)[,peptideColumns], 1, function(x) { method(x) > peptideCutoff }))   
    }
    
    return(filterRows(data, filter))
 })
 
 
-# Reverse Filter: removes positive hits from reverse databases
+##' reverse filter
+##' 
+##' removes positive hits from reverse databases
+##' 
+##' @param symbol filter for symbol
+##' @param reverseColumn name of column containing the reverse column
+##' @importClassesFrom Biobase ExpressionSet
+##' @return filtered ExpressionSet
+##' @export
 setMethod("reverseFilter", "ExpressionSet", function (data, symbol = "+", reverseColumn="Reverse") {
    rCol <- fData(data)[, reverseColumn]
    rCol[rCol == symbol] <- NA
    return(filterRows(data, !is.na(rCol)))
 })
 
-#Contaminant Filter: removes features known to be contaminants
+##' contaminant filter
+##' 
+##' removes features known to be contaminantss
+##' 
+##' @param symbol filter for symbol
+##' @param contaminantColumn name of column containing the contaminant column
+##' @importClassesFrom Biobase ExpressionSet
+##' @return filtered ExpressionSet
+##' @export
 setMethod("contaminantFilter", "ExpressionSet", function(data, symbol = "+", contaminantColumn="Contaminant") {
    cCol <- fData(data)[, contaminantColumn]
    cCol[cCol == symbol] <- NA
@@ -98,6 +135,11 @@ setMethod("contaminantFilter", "ExpressionSet", function(data, symbol = "+", con
 })
 
 
+##' returns complete cases 
+##' 
+##' @importClassesFrom Biobase ExpressionSet
+##' @return filtered ExpressionSet
+##' @export
 setMethod("completeCases", "ExpressionSet", function(object) {
    return(filterRows(object, apply(exprs(object), 1, function(x) !any(is.na(x)))))
 })
@@ -106,7 +148,14 @@ setMethod("completeCases", "ExpressionSet", function(object) {
 # Normalization 
 # -----------------------------------------------------------
 
-#quantile normalisation
+##' normalized data
+##' 
+##' @param minIntensity minimal intensity for NA cutoff
+##' @param FUN function for normalization
+##' @importClassesFrom Biobase ExpressionSet
+##' @importMethodsFrom affyPLM normalize.ExpressionSet.quantiles
+##' @return normalized ExpressionSet
+##' @export
 setMethod("normalizeData", "ExpressionSet", function(data, minIntensity=0, FUN=normalize.ExpressionSet.quantiles, ...) {
    if(!is.function(FUN)) {
       stop("fun has to be a function")
@@ -120,6 +169,12 @@ setMethod("normalizeData", "ExpressionSet", function(data, minIntensity=0, FUN=n
 # Transformation 
 # -----------------------------------------------------------
 
+##' transforms data
+##' 
+##' @param FUN function for transformation
+##' @importClassesFrom Biobase ExpressionSet
+##' @return transformed ExpressionSet
+##' @export
 setMethod("transformData", "ExpressionSet",
           function(data,
                    FUN = function(x) { exprs(x) <- log(exprs(x)); return(x) }){
@@ -137,6 +192,13 @@ setMethod("transformData", "ExpressionSet",
 # Scaling
 # -----------------------------------------------------------
 
+##' scale data
+##' 
+##' @param scalefactor factor for scaling
+##' @param FUN function for scaling
+##' @importClassesFrom Biobase ExpressionSet
+##' @return scaled ExpressionSet
+##' @export
 setMethod("scaleData", "ExpressionSet",
           function(data, scalefactor = 1000,
                    FUN = function(x) { exprs(x) <- exprs(x) / scalefactor; return(x) }){
@@ -154,7 +216,7 @@ setMethod("scaleData", "ExpressionSet",
 # -----------------------------------------------------------
 
 
-
+#TODO
 setMethod("getGroupData", "ExpressionSet",
       function(data, group, groupCol="groups", ...) { 
          groupData <- exprs(data.transformed)[,rownames(pData(data)[pData(data.transformed)[,groupCol] == group,])]
@@ -278,6 +340,13 @@ setMethod("plotNAdensity", "ExpressionSet", function(data, group, groupCol="grou
 # imputation
 # -----------------------------------------------------------
 
+##' impute independent groups with amelia
+##' 
+##' @param scalefactor factor for scaling
+##' @param FUN function for scaling
+##' @importClassesFrom Biobase ExpressionSet
+##' @return scaled ExpressionSet
+##' @export
 setMethod("imputeIndependentGroupsWithAmelia", "ExpressionSet", function(data.input, minPresent=0.5, groupingCol="groups", m=10,  ...) {   
    #prepare for Amelia
    extractGroups <- function (data, groups) {

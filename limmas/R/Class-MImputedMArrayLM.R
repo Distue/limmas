@@ -1,10 +1,10 @@
 
-
+##' @export
 setMethod(f="getData", signature="MImputedMArrayLM", definition=function(object) {
    return(object@data)
 })
 
-
+##' @export
 setMethod(f="getNumberImputations", signature="MImputedMArrayLM", definition=function(object) {
    return(length(object@data))
 })
@@ -23,7 +23,7 @@ setMethod(f="getNumberImputations", signature="MImputedMArrayLM", definition=fun
 # })
 
 
-
+##' @export
 setMethod("contrastFit", "MImputedMArrayLM", function(fit, contrasts) {
    contrastMatrix <- makeContrasts(contrasts=contrasts, levels=fit@data[[1]]$design)
    
@@ -35,7 +35,7 @@ setMethod("contrastFit", "MImputedMArrayLM", function(fit, contrasts) {
    return(fit)
 })
 
-
+##' @export
 setMethod("contrastLimit", "MImputedMArrayLM", function(fit, contrasts) {
    # for each contrast, get the detection limits
    fit@data <- lapply(fit@data, function(x) {
@@ -45,7 +45,7 @@ setMethod("contrastLimit", "MImputedMArrayLM", function(fit, contrasts) {
    return(fit)
 })
 
-
+##' @export
 setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="character"), function(fit, design, vs) { 
    if (!vs %in% colnames(design)) {
       stop("'vs' is not a colname of design")
@@ -53,6 +53,7 @@ setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="character"), f
    return(vsFit(fit, design, which(colnames(design)==vs)))
 })
 
+##' @export
 setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="numeric"), function(fit, design, vs) { 
    #create contrast 
    selected.group <- colnames(design)[vs]
@@ -62,11 +63,12 @@ setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="numeric"), fun
    return(limmaContrastFit(data.list, design, contrast))
 })
 
+##' @export
 setMethod("checkMissingness", "MImputedMArrayLM", function(data) {
    checkMissingness(eset(data, 1))
 })
    
-
+##' @export
 setMethod("combineFits", "MImputedMArrayLM", function(fit) {
    efit.list <- fit@data
    featurelist <- efit.list[[1]]$genes
