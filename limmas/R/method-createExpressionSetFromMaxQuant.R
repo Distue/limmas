@@ -7,6 +7,7 @@
 ##' @param idcolumn name of column containing the protein id
 ##' @param annotation feature annotations
 ##' @return ExpressionSet protein intensities and annotation as ExpressionSet
+##' @importClassesFrom Biobase ExpressionSet AnnotatedDataFrame
 ##' @export
 createExpressionSetFromMaxQuant <- function(data, pheno, idcolumn="Protein.IDs", annotation=as.character(data[,idcolumn]), ...) {
    if(!is.data.frame(data)) {

@@ -6,6 +6,7 @@
 ##' @param idcolumn name of column containing the protein id
 ##' @param splitIds locial if the ids should be split
 ##' @return ExpressionSet protein intensities and annotation as ExpressionSet
+##' @importClassesFrom Biobase ExpressionSet AnnotatedDataFrame
 ##' @export
 read.maxQuant <- function(file, pheno, idcolumn="Protein.IDs", splitIds = F, ...) {
    if(!is.character(file)) {
@@ -15,7 +16,7 @@ read.maxQuant <- function(file, pheno, idcolumn="Protein.IDs", splitIds = F, ...
       stop(paste("file '", file, "' does not exist or is not accessable.", sep=""))
    }
    if(!is(pheno, "SmartAnnotatedDataFrame")) {
-      stop("pheno an SmartAnnotatedDataFrame.")
+      stop("pheno is not a SmartAnnotatedDataFrame.")
    }
    if(!is.character(idcolumn)) {
       stop("idcolumn is not a character string.")
