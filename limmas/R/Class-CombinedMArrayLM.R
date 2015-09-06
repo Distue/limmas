@@ -3,9 +3,10 @@
 # Authors: Thomas Schwarzl <thomas@schwarzl.net>, Elisa D'Arcangelo
 # holds ExpressionSets of multiple imputed data
 # --------------------------------------------------------
-       
+
 
 ##' @title topTableImpute
+##' @name topTableImpute
 ##' @description This function is a modification of the topTable function in the limma package to work with the imputated dataset
 ##' @param fit is a CombinedMArrayLM object
 ##' @param sort.by statistic to sort by; choices are p.value ("p" or "P"), t-value ("t" or "T"), "logFC"
@@ -29,74 +30,75 @@ setMethod("topTableImpute", "CombinedMArrayLM", function(fit,
    if (!is.null(featurelist) && is.null(dim(featurelist))) {
       featurelist <- data.frame(ID = featurelist, stringsAsFactors = FALSE)
    }
-   
+
    M        <- as.matrix(fit@coefficients)[,coef]
    tstat    <- as.matrix(fit@tstat)[,coef]
    P.value  <- as.matrix(fit@p.value)[,coef]
    rownum   <- 1:length(M)
-   
+
    sort.by <- match.arg(sort.by, c("logFC", "M", "P", "p", "T", "t"))
-   
-   if(sort.by == "M") 
+
+   if(sort.by == "M")
       sort.by <- "logFC"
-   if(sort.by == "T") 
+   if(sort.by == "T")
       sort.by <- "t"
-   if(sort.by == "p") 
+   if(sort.by == "p")
       sort.by <- "P"
-   
+
    # Adjust the raw p-values for multiple testing using method specified in adjust.method (e.g. BH, FDR, etc.)
    adj.P.value <- p.adjust(P.value, method=adjust.method)
-   
+
    # If a specific p.value threshold or lfc threshold is specified, find the significantly DE proteins according
    # to those thresholds.
    if(p.value < 1 | lfc > 0) {
       sig <- (adj.P.value < p.value) & (abs(M) > lfc)
-      if(any(is.na(sig))) 
+      if(any(is.na(sig)))
          # Check for NA values
-         sig[is.na(sig)] <- FALSE     
-      if(all(!sig))  
+         sig[is.na(sig)] <- FALSE
+      if(all(!sig))
          # If no significantly DE proteins, return an empty dataframe
-         return(data.frame())            
-      
+         return(data.frame())
+
       # Extract significant proteins (name, logFC, tstat, p.val, p.val.adj)
-      featurelist <- featurelist[sig, , drop=F]       
+      featurelist <- featurelist[sig, , drop=F]
       M           <- M[sig]
       tstat       <- tstat[sig]
       P.value     <- P.value[sig]
       adj.P.value <- adj.P.value[sig]
       rownum      <- rownum[sig]
    }
-   
-   # Sort the proteins according to the value specified in sort.by (logFC, p.value or t.value)                     
+
+   # Sort the proteins according to the value specified in sort.by (logFC, p.value or t.value)
    ord <- switch(sort.by,
                  logFC = order(abs(M), decreasing=T),
-                 P = order(P.value, decreasing=F), 
+                 P = order(P.value, decreasing=F),
                  t = order(abs(tstat), decreasing=T))
-   
-   # Check that the number of top proteins requested is not more than the number of proteins in the dataset.                     
+
+   # Check that the number of top proteins requested is not more than the number of proteins in the dataset.
    if(length(M) < number)
       number <- length(M)
-   
+
    top <- ord[1:number]
-   
+
    if(is.null(featurelist))
       top_results_table <- data.frame(logFC = M[top])
    else
       top_results_table <- data.frame(featurelist[top,,drop=F], logFC=M[top], stringsAsFactors=F)
-   
+
    # Create the sorted dataframe for outputting
    top_results_table <- data.frame(top_results_table,
                                    t = tstat[top],
                                    P.value = P.value[top],
                                    adj.P.value = adj.P.value[top])
-   
+
    rownames(top_results_table) <- as.character(rownum)[top]
    return(top_results_table)
 })
 
 
 
-##' @title topTableImpute
+##' @title getSignificantFeatures
+##' @name getSignificantFeatures
 ##' @description This function is a modification of the topTable function in the limma package to work with the imputated dataset
 ##' @param fit is a CombinedMArrayLM object
 ##' @param sort.by statistic to sort by; choices are p.value ("p" or "P"), t-value ("t" or "T"), "logFC"
@@ -115,33 +117,50 @@ setMethod("getSignificantFeatures", "CombinedMArrayLM", function(fit,
                                                                  logFCcutoff  = 0,
                                                                  ...) {
    tt <- topTableImpute(fit, number=nrow(fit@coefficients), p.value=p.value, ...)
-   
+
    if (onlyPositive) {
       tt <- tt[tt[,"logFC"] > logFCcutoff, ]
    }
-   
+
    if (onlyNegative) {
       tt <- tt[tt[,"logFC"] < (-1 * logFCcutoff), ]
    }
-   
+
    return(tt)
 })
 
+
+##' @title writeSignificantFeatures
+##' @name writeSignificantFeatures
+##' @description writes signifiant features
+##' @param fit is a CombinedMArrayLM object
+##' @param file file name
 ##' @export
 setMethod("writeSignificantFeatures", c(fit="CombinedMArrayLM", file="character"), function(fit, file,  ...) {
    tt <- getSignificantFeatures(fit,  ...)
    write.table(tt, file=file, sep="\t", quote=F, row.names=F)
 })
 
+##' @title getFeatureFilter
+##' @name getFeatureFilter
+##' @description get feature filters
+##' @param fit is a CombinedMArrayLM object
+##' @param data data
+##' @param p.value p.value index
+##' @param adjust multiple hypothesis testing method
+##' @param onlyPositive get features with positive logFC
+##' @param onlyNegative get features with negative logFC
+##' @param mode and / or logic
+##' @return filter
 ##' @export
 setMethod("getFeatureFilter", c(fit="CombinedMArrayLM", data="MImputedExpressionSets"), function(fit, data, p.value=0.05, adjust="BH", onlyPositive=T, onlyNegative=F, mode="or", ...) {
    ncoef <- ncol(fit@coefficients)
-   
+
    tt <- lapply(1:ncoef, function(x) {
       return(sort(as.numeric(rownames(getSignificantFeatures(fit, coef=x, adjust=adjust, p.value=p.value, onlyPositive=onlyPositive, onlyNegative=onlyNegative)))))#, ...))
    })
-   
-   if(mode == "and") {      
+
+   if(mode == "and") {
       differ <- tt[[1]]
       if(length(tt) > 1) {
          for(i in 2:length(tt)) {
@@ -153,12 +172,17 @@ setMethod("getFeatureFilter", c(fit="CombinedMArrayLM", data="MImputedExpression
    } else {
       stop("incorrect mode")
    }
-   
-   return(differ)
-}) 
 
+   return(differ)
+})
+
+##' @title filterFeatures
+##' @name filterFeatures
+##' @description filter featues
+##' @param fit is a CombinedMArrayLM object
+##' @param data data
+##' @return filtered data
 ##' @export
 setMethod("filterFeatures", c(fit="CombinedMArrayLM", data="MImputedExpressionSets"), function(fit, data, ...) {
    return(data[getFeatureFilter(fit, data, ...),])
-})       
-             
+})

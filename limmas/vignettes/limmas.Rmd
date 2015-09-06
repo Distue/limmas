@@ -14,7 +14,6 @@ bibliography: bibliography.bibtex
 
 ```{r, echo=FALSE} 
 suppressPackageStartupMessages(library(BiocStyle))
-suppressPackageStartupMessages(library(limmas))
 ```
 
 ```{r, echo=FALSE, eval=FALSE} 
@@ -34,6 +33,9 @@ Multiple imputation (MI) emerges as an interesting, easy to implement alternativ
 
 In our approach, we show how incomplete protein entries can be salvaged using MI and the full amount of MS information subsequently used for differential protein expression analysis. Analysis of differential protein expression is  carried out with linear models and empiric Bayes method of the Linear Models for Microarray Data (`r Biocpkg("limma")`) package [@Smyth2005]. limma allows to fit a linear model to the expression data of each protein, whereby both simple experiments and experimental designs involving several groups and factors as well as time course experiments can be handled effectively.
 
+```{r} 
+require(limmas)
+```
 
 # Input data
 
@@ -65,11 +67,10 @@ replicates each of sample groups were generated. The groups are: (1) antibody co
 The ExpressionSet containing this data can be loaded with
 
 ```{r} 
-#data(gefh1inhib)
-load("~/bioc/limmas/limmas/data/gefh1inhib.rda")
+data(gefh1inhib)
 data <- gefh1inhib
 pheno <- gefh1inhib.pheno
-# pData(pheno)
+pData(pheno)
 ```
 
 If you want to use the example data, you can continue to section [Filtering].
