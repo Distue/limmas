@@ -1,5 +1,8 @@
-# Extend the Class ExpressionSet, allowing the functionality to be the same
-
+# --------------------------------------------------------
+# Extension of the Class ExpressionSet
+# Authors: Thomas Schwarzl <schwarzl@embl.de> with help from Elisa D'Arcangelo
+# Additional functions for ExpressionSet
+# --------------------------------------------------------
 
 ##' @name filterRows
 ##' @title filter rows

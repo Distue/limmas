@@ -1,10 +1,26 @@
+# --------------------------------------------------------
+# Class MImputedMArrayLM
+# Authors: Thomas Schwarzl <schwarzl@embl.de>
+# MArrayLM of multiple imputed data
+# --------------------------------------------------------
+
+##' @rdname MImputedExpressionSets
+##' @export
+MImputedMArrayLM <- function(data,
+                             ...) {
+   return(new(Class  = "MImputedMArrayLM",
+              data   = data,
+              ...))
+}
+
+
 
 ##' @title getData
 ##' @name getData
 ##' @description get the data
 ##' @return data
 ##' @export
-setMethod(f="getData", signature="MImputedMArrayLM", definition=function(object) {
+setMethod("getData", "MImputedMArrayLM", function(object) {
    return(object@data)
 })
 
@@ -12,7 +28,7 @@ setMethod(f="getData", signature="MImputedMArrayLM", definition=function(object)
 ##' @name getNumberImputations
 ##' @description returns the number of imputations.
 ##' @export
-setMethod(f="getNumberImputations", signature="MImputedMArrayLM", definition=function(object) {
+setMethod("getNumberImputations", "MImputedMArrayLM", function(object) {
    return(length(object@data))
 })
 
@@ -39,6 +55,7 @@ setMethod(f="getNumberImputations", signature="MImputedMArrayLM", definition=fun
 ##' @title contrast fit
 ##' @description TODO
 ##' @param contrasts contrasts
+##' @importMethodsFrom limma eBayes makeContrasts
 ##' @export
 setMethod("contrastFit", "MImputedMArrayLM", function(fit, contrasts) {
    contrastMatrix <- makeContrasts(contrasts=contrasts, levels=fit@data[[1]]$design)
@@ -53,8 +70,9 @@ setMethod("contrastFit", "MImputedMArrayLM", function(fit, contrasts) {
 
 ##' @name contrastLimit
 ##' @title contrastLimit
-##' @description TODOß
+##' @description TODO
 ##' @param contrasts contrasts
+##' @importMethodsFrom limma eBayes
 ##' @export
 setMethod("contrastLimit", "MImputedMArrayLM", function(fit, contrasts) {
    # for each contrast, get the detection limits
@@ -99,6 +117,7 @@ setMethod("checkMissingness", "MImputedMArrayLM", function(data) {
 
 ##' @name combineFits
 ##' @title combineFits
+##' @param fit fit
 ##' @description combines fits
 ##' @export
 setMethod("combineFits", "MImputedMArrayLM", function(fit) {
@@ -155,11 +174,12 @@ setMethod("combineFits", "MImputedMArrayLM", function(fit) {
    }
 
    ids <- rownames(efit.list[[1]])
-   out <- new("CombinedMArrayLM", ids = ids, coefficients=coefficients, tstat=t.val, p.value=p.value, featurelist=featurelist)
+   out <- CombinedMArrayLM(ids = ids,
+                           coefficients=coefficients,
+                           tstat=t.val,
+                           p.value=p.value,
+                           featurelist=featurelist)
    return(out)
 })
-
-
-
 
 

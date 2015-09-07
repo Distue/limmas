@@ -1,8 +1,25 @@
 # --------------------------------------------------------
-# Class MImputedExpressionSets
-# Authors: Thomas Schwarzl <thomas@schwarzl.net>, Elisa D'Arcangelo
-# holds ExpressionSets of multiple imputed data
+# Class CombinedMArrayLM
+# Authors: Thomas Schwarzl <schwarzl@embl.de> with help from Elisa D'Arcangelo
+# Combined MArrayLM from multiple imputation data
 # --------------------------------------------------------
+
+##' @rdname MImputedExpressionSets
+##' @export
+CombinedMArrayLM <- function(ids,
+                             coefficients,
+                             tstat,
+                             p.value,
+                             featurelist,
+                              ...) {
+   return(new(Class                = "CombinedMArrayLM",
+              ids            = ids,
+              coefficients   = coefficients,
+              tstat          = tstat,
+              p.value        = p.value,
+              featurelist    = featurelist,
+              ...))
+}
 
 
 ##' @title topTableImpute

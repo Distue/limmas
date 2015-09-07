@@ -1,7 +1,27 @@
 # --------------------------------------------------------
 # Class MImputedExpressionSets
+# Authors: Thomas Schwarzl <schwarzl@embl.de> with help from Elisa D'Arcangelo
 # holds ExpressionSets of multiple imputed data
 # --------------------------------------------------------
+
+##' @rdname MImputedExpressionSets
+##' @export
+MImputedExpressionSets <- function(data,
+                                   groupingCol,
+                                   minPresent,
+                                   numberImputations,
+                                   orginalData,
+                                   groupData,
+                                   ...){
+   return(new(Class            = "MImputedExpressionSets",
+              data                 = data,
+              groupingCol          = groupingCol,
+              minPresent           = minPresent,
+              numberImputations    = numberImputations,
+              originalData         = originalData,
+              groupData            = groupData,
+              ...))
+}
 
 
 ##' @name getOriginalData

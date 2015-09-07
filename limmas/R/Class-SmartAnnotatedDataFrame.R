@@ -1,3 +1,19 @@
+# --------------------------------------------------------
+# Class SmartAnnotatedDataFrame derived from AnnotatedDataFrame
+# Authors: Thomas Schwarzl <schwarzl@embl.de> with help from Elisa D'Arcangelo
+# holds ExpressionSets of multiple imputed data
+# --------------------------------------------------------
+
+##' @rdname SmartAnnotatedDataFrame
+##' @export
+SmartAnnotatedDataFrame <- function(sampleNamesCol = "", originalNamesCol = "", ...){
+   return(new(Class            = "SmartAnnotatedDataFrame",
+              sampleNamesCol   = sampleNamesCol,
+              originalNamesCol = originalNamesCol,
+              ...))
+}
+
+
 ##' @name originalNamesCol
 ##' @title original names column
 ##' @description get the column name containing the original sample names
@@ -154,17 +170,4 @@ setMethod("[", "SmartAnnotatedDataFrame", function(x, i, j, ..., drop = TRUE){
 })
 
 
-##' @name SmartAnnotatedDataFrame
-##' @title Constructor
-##' @description TODO
-##' @importClassesFrom Biobase AnnotatedDataFrame
-##' @param sampleNamesCol column name containing sample names, "" for rownames
-##' @param originalNamesCol column name containing original names, "" for rownames
-##' @export
-SmartAnnotatedDataFrame <- function(sampleNamesCol = "",originalNamesCol = "", ...){
-   return(new(Class="SmartAnnotatedDataFrame",
-              sampleNamesCol=sampleNamesCol,
-              originalNamesCol=originalNamesCol,
-              ...))
-}
 
