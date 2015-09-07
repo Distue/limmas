@@ -5,9 +5,9 @@ Description: LIMMAS, linear models for mass spectrometry, is an R package to ass
 URL: http://titin.ucd.ie/~tom/limmas
 Maintainer: Thomas Schwarzl <schwarzl@embl.de>
 Author: Thomas Schwarzl <schwarzl@embl.de>, with contributions of Elisa D'Arcangelo, Norma Bargary, and Matthias Malovits
-Version: 0.3
+Version: 0.4
 License: MIT
-Depends: R (>= 2.11.0), Amelia, limma, Biobase, affyPLM
-Suggests: 
-Imports: Amelia, limma, Biobase, affyPLM
+Depends: R (>= 2.11.0), limma
+Suggests: testthat, Amelia
+Imports: limma, Biobase, affyPLM
 Packaged: 2013-04-18 14:43:00 UTC; tom

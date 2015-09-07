@@ -4,13 +4,21 @@
 # --------------------------------------------------------
 
 
-# return the original Expression Set wherefrom the imputed values were created
+##' get orginial data
+##'
+##' return the original Expression Set wherefrom the imputed values were created
+##' @export
 setMethod("getOriginalData", "MImputedExpressionSets", definition=function(object) {
    return(object@originalData)
 })
 
-# minimum of present
+##' minimum of present
+##'
+##' @export
 setMethod(minPresent, "MImputedExpressionSets", function(object) slot(object, "minPresent"))
+
+
+##' @export
 setReplaceMethod("minPresent", "MImputedExpressionSets", function(object, value) {
    slot(object, "minPresent") <- value
    validObject(object)
@@ -26,7 +34,7 @@ setReplaceMethod("minPresent", "MImputedExpressionSets", function(object, value)
 #    return(object)
 # })
 
-
+##' @export
 setMethod(groupingCol, "MImputedExpressionSets", function(object) slot(object, "groupingCol"))
 setReplaceMethod("groupingCol", "MImputedExpressionSets", function(object, value) {
    slot(object, "groupingCol") <- value
@@ -34,11 +42,12 @@ setReplaceMethod("groupingCol", "MImputedExpressionSets", function(object, value
    return(object)
 })
 
-
+##' @export
 setMethod("getGroupingCol", "MImputedExpressionSets", function(object) {
    return(object@groupingCol)
 })
 
+##' @export
 setMethod(numberImputations, "MImputedExpressionSets", function(object) slot(object, "numberImputations"))
 setReplaceMethod("numberImputations", "MImputedExpressionSets", function(object, value) {
    slot(object, "numberImputations") <- value
@@ -59,6 +68,8 @@ setMethod("fData", "MImputedExpressionSets", function(object) {
    return(fData(object@data[[1]]))
 })
 
+##' @name annotation
+##' @title annotation
 ##' @importClassesFrom Biobase AnnotatedDataFrame
 ##' @export
 setMethod("annotation", "MImputedExpressionSets", function(object) {
@@ -245,7 +256,7 @@ setMethod("[", "MImputedExpressionSets", function(x, i, j, ..., drop = TRUE) {
 })
 
 ##' calc group estimations
-##' ß
+##' @name calcGroupEstimations
 setMethod("calcGroupEstimations", "MImputedExpressionSets", function(object) {
     # for each group, calculate the estimates
     object@groupData <- lapply(levels(pData(object@originalData)[,object@groupingCol]),

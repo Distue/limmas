@@ -104,8 +104,8 @@ setGeneric("numberImputations<-", function(object, value) standardGeneric("numbe
 
 ##' @rdname pData
 ##' @export
-# setGeneric("pData", function(object) standardGeneric("pData"))
-NULL
+setGeneric("pData", function(object) standardGeneric("pData"))
+
 
 ##' @rdname fData
 ##' @export
@@ -113,13 +113,11 @@ setGeneric("fData", function(object) standardGeneric("fData"))
 
 ##' @rdname annotation
 ##' @export
-# setGeneric("annotation", function(object) standardGeneric("annotation"))
-NULL
+setGeneric("annotation", function(object) standardGeneric("annotation"))
 
 ##' @rdname eset
 ##' @export
-#setGeneric("eset", function(object, imputation) standardGeneric("eset"))
-NULL
+setGeneric("eset", function(object, imputation) standardGeneric("eset"))
 
 ##' @rdname intensities
 ##' @export
@@ -156,6 +154,7 @@ setGeneric("getAverageExpression", function(object) standardGeneric("getAverageE
 ##' @rdname calcGroupEstimations
 ##' @export
 setGeneric("calcGroupEstimations", function(object) standardGeneric("calcGroupEstimations"))
+
 
 ##' @rdname estimateLimits
 ##' @export
