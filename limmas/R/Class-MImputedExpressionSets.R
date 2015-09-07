@@ -4,20 +4,22 @@
 # --------------------------------------------------------
 
 
-##' get orginial data
-##'
-##' return the original Expression Set wherefrom the imputed values were created
+##' @name getOriginalData
+##' @title get orginial data
+##' @description return the original Expression Set wherefrom the imputed values were created
 ##' @export
 setMethod("getOriginalData", "MImputedExpressionSets", definition=function(object) {
    return(object@originalData)
 })
 
-##' minimum of present
-##'
+##' @name minPresent
+##' @title minimum present
+##' @description minimum of present
 ##' @export
 setMethod(minPresent, "MImputedExpressionSets", function(object) slot(object, "minPresent"))
 
 
+##' @rdname minPresent
 ##' @export
 setReplaceMethod("minPresent", "MImputedExpressionSets", function(object, value) {
    slot(object, "minPresent") <- value
@@ -34,6 +36,10 @@ setReplaceMethod("minPresent", "MImputedExpressionSets", function(object, value)
 #    return(object)
 # })
 
+##' @name groupingCol
+##' @title grouping columns
+##' @description TODO
+##' @param value value
 ##' @export
 setMethod(groupingCol, "MImputedExpressionSets", function(object) slot(object, "groupingCol"))
 setReplaceMethod("groupingCol", "MImputedExpressionSets", function(object, value) {
@@ -42,26 +48,39 @@ setReplaceMethod("groupingCol", "MImputedExpressionSets", function(object, value
    return(object)
 })
 
+##' @name getGroupingCol
+##' @title gets the grouping column
+##' @description TODO
 ##' @export
 setMethod("getGroupingCol", "MImputedExpressionSets", function(object) {
    return(object@groupingCol)
 })
 
+##' @name numberImputations
+##' @title number of imputations
+##' @description TODO
 ##' @export
 setMethod(numberImputations, "MImputedExpressionSets", function(object) slot(object, "numberImputations"))
+
+##' @rdname numberImputations
+##' @export
 setReplaceMethod("numberImputations", "MImputedExpressionSets", function(object, value) {
    slot(object, "numberImputations") <- value
    validObject(object)
    return(object)
 })
 
-
+##' @name pData
+##' @title pData
 ##' @importClassesFrom Biobase AnnotatedDataFrame
 ##' @export
 setMethod("pData", "MImputedExpressionSets", function(object) {
    return(pData(object@data[[1]]))
 })
 
+##' @name fData
+##' @title fData
+##' @description TODO
 ##' @importClassesFrom Biobase AnnotatedDataFrame
 ##' @export
 setMethod("fData", "MImputedExpressionSets", function(object) {
@@ -76,18 +95,27 @@ setMethod("annotation", "MImputedExpressionSets", function(object) {
    return(annotation(object@data[[1]]))
 })
 
+##' @name eset
+##' @title eset
+##' @description desc
 ##' @importClassesFrom Biobase AnnotatedDataFrame
 ##' @export
 setMethod("eset", "MImputedExpressionSets", function(object, imputation) {
    return(object@data[[imputation]])
 })
 
+##' @name intensities
+##' @title intensities
+##' @description TODO
 ##' @importClassesFrom Biobase AnnotatedDataFrame
 ##' @export
 setMethod("intensities", "MImputedExpressionSets", function(object, imputation) {
    return(exprs(object@data[[imputation]]))
 })
 
+##' @name limmasFit
+##' @title limmas fit
+##' @description TODO
 ##' @importClassesFrom Biobase AnnotatedDataFrame
 ##' @export
 setMethod("limmasFit", "MImputedExpressionSets", function(object, design) {
@@ -98,8 +126,8 @@ setMethod("limmasFit", "MImputedExpressionSets", function(object, design) {
    })))
 })
 
-##' CompleteCase filter
-##'
+##' @title CompleteCase filter
+##' @name completeCases
 ##' @return returns all complete rows
 ##'
 ##' @importClassesFrom Biobase ExpressionSet
@@ -108,10 +136,10 @@ setMethod("completeCases", "MImputedExpressionSets", function(object) {
    return(filterRows(object, apply(exprs(object@data[[1]]), 1, function(x) !any(is.na(x)))))
 })
 
-##' filterRows filter
-##'
+##' @name filterRows
+##' @title filterRows filter
+##' @description TODO
 ##' @return filter all rows
-##'
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @export
 setMethod("filterRows", signature = c(object = "MImputedExpressionSets", filter = "logical"), function(object, filter) {
@@ -119,10 +147,10 @@ setMethod("filterRows", signature = c(object = "MImputedExpressionSets", filter 
    return(object)
 })
 
-##' filterCols filter
-##'
+##' @name filterCols
+##' @title filter columns
+##' @description filterCols filter
 ##' @return filter all columns
-##'
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @export
 setMethod("filterCols",  c(object = "MImputedExpressionSets", filter = "logical"), function(object, filter) {
@@ -130,8 +158,9 @@ setMethod("filterCols",  c(object = "MImputedExpressionSets", filter = "logical"
    return(object)
 })
 
-##' fill missing values with values
-##'
+##' @name fillNAsWithValues
+##' @title fill NAs with Values
+##' @description fill missing values with values
 ##' @param value value to replace NAs
 ##' @return MIputedExpressionSets with replaced NAs
 ##' @export
@@ -140,10 +169,7 @@ setMethod("fillNAsWithValues", c(object = "MImputedExpressionSets", value = "num
    return(object)
 })
 
-##' plotExpression
-##'
-##' function to plot a feature
-##' @param ID character identification of feature ID
+##' @rdname plotExpression
 ##' @export
 setMethod("plotExpression", c(object = "MImputedExpressionSets", ID = "character"), function(object, ID, ...) {
    id <- which(annotation(object) == ID)
@@ -156,9 +182,9 @@ setMethod("plotExpression", c(object = "MImputedExpressionSets", ID = "character
    }
 })
 
-##' plotExpression
-##'
-##' function to plot a feature
+##' @name plotExpression
+##' @title plot expression
+##' @description function to plot a feature
 ##' @param ID character identification of feature ID
 ##' @param groupingCol grouping Col
 ##' @param colors colors
@@ -218,7 +244,10 @@ setMethod("plotExpression", c(object = "MImputedExpressionSets", ID = "numeric")
    }
 })
 
-##' get the average expression
+
+##' @name getAverageExpression
+##' @title get average expresion
+##' @description get the average expression
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @return returns an ExpressionSet with average intensities
 ##' @export
@@ -235,8 +264,9 @@ setMethod("getAverageExpression", "MImputedExpressionSets", function(object) {
    return(eSet)
 })
 
-##' selects subset of MImputedExpressionSets
-##'
+##' @name [
+##' @title [
+##' @description selects subset of MImputedExpressionSets
 ##' @return subset MImputedExpressionSets
 ##' @export
 setMethod("[", "MImputedExpressionSets", function(x, i, j, ..., drop = TRUE) {
@@ -255,8 +285,10 @@ setMethod("[", "MImputedExpressionSets", function(x, i, j, ..., drop = TRUE) {
    return(x)
 })
 
-##' calc group estimations
 ##' @name calcGroupEstimations
+##' @title calculate group estimations
+##' @description calc group estimations
+##' @export
 setMethod("calcGroupEstimations", "MImputedExpressionSets", function(object) {
     # for each group, calculate the estimates
     object@groupData <- lapply(levels(pData(object@originalData)[,object@groupingCol]),
@@ -268,6 +300,11 @@ setMethod("calcGroupEstimations", "MImputedExpressionSets", function(object) {
 
 })
 
+##' @name estimateLimits
+##' @title estimate limits
+##' @description TODO
+##' @param design design
+##' @param contrast contrast
 ##' @export
 setMethod("estimateLimits", "MImputedExpressionSets", function(object, design, contrasts) {
    #if(is.null(object@groupData)) {

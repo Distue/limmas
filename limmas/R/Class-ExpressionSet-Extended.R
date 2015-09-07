@@ -1,8 +1,9 @@
 # Extend the Class ExpressionSet, allowing the functionality to be the same
 
 
-##' Functions for filtering rows while maintaining data integrety
-##'
+##' @name filterRows
+##' @title filter rows
+##' @description Functions for filtering rows while maintaining data integrety
 ##' @param filter vector for filtering
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @export
@@ -13,8 +14,9 @@ setMethod("filterRows", c(object="ExpressionSet", filter="logical"), function(ob
    return(object)
 })
 
-##' Functions for filtering columns while maintaining data integrety
-##'
+##' @name filterCols
+##' @title filter columns
+##' @description Functions for filtering columns while maintaining data integrety
 ##' @param filter vector for filtering
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @return filtered ExpressionSet
@@ -24,9 +26,9 @@ setMethod("filterCols", c(object="ExpressionSet", filter="logical"), function(ob
    return(object)
 })
 
-
-##' function for calculating percentage of NAs per sample
-##'
+##' @name checkMissingness
+##' @title checkMissingness
+##' @description function for calculating percentage of NAs per sample
 ##' @param minIntensity minimal intensity cutoff
 ##' @return  percentage of missingness
 ##' @importClassesFrom Biobase ExpressionSet
@@ -38,8 +40,9 @@ setMethod("checkMissingness", "ExpressionSet", function(data, minIntensity=0){
    }))
 })
 
-##' function for checking the number of complete rows
-##'
+##' @name checkCompleteRows
+##' @title checkCompleteRows
+##' @description function for checking the number of complete rows
 ##' @param minIntensity minimal intensity cutoff
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @return sum of complete rows
@@ -52,8 +55,9 @@ setMethod("checkCompleteRows", "ExpressionSet", function(data, minIntensity=0) {
 })
 
 
-##' get intensities with above a certain min intensity cutoff
-##'
+##' @name getIntensities
+##' @title get intensities
+##' @description get intensities with above a certain min intensity cutoff
 ##' @param minIntensity minimal intensity cutoff
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @return intensities
@@ -75,11 +79,10 @@ setMethod("getIntensities", c(data="ExpressionSet", minIntensity="numeric"), fun
 # -----------------------------------------------------------
 
 
-##' peptide filter
-##'
-##' remove all probes where the peptide count is smaller than or equal to 1
+##' @name peptideFilter
+##' @title peptide filter
+##' @description remove all probes where the peptide count is smaller than or equal to 1
 ##' get intensities with above a certain min intensity cutoff
-##'
 ##' @param peptideCutoff minimal peptide cutoff
 ##' @param peptideColumns columns having
 ##' @param method function which is used for filtering
@@ -103,10 +106,9 @@ setMethod("peptideFilter", "ExpressionSet", function (data, peptideCutoff=1, pep
 })
 
 
-##' reverse filter
-##'
-##' removes positive hits from reverse databases
-##'
+##' @name reverseFilter
+##' @title reverse filter
+##' @description  removes positive hits from reverse databases
 ##' @param symbol filter for symbol
 ##' @param reverseColumn name of column containing the reverse column
 ##' @importClassesFrom Biobase ExpressionSet
@@ -118,10 +120,9 @@ setMethod("reverseFilter", "ExpressionSet", function (data, symbol = "+", revers
    return(filterRows(data, !is.na(rCol)))
 })
 
-##' contaminant filter
-##'
-##' removes features known to be contaminantss
-##'
+##' @name contaminantFilter
+##' @title contaminant filter
+##' @description removes features known to be contaminants
 ##' @param symbol filter for symbol
 ##' @param contaminantColumn name of column containing the contaminant column
 ##' @importClassesFrom Biobase ExpressionSet
@@ -134,9 +135,9 @@ setMethod("contaminantFilter", "ExpressionSet", function(data, symbol = "+", con
    return(filterRows(data, !is.na(cCol)))
 })
 
-
-##' returns complete cases
-##'
+##' @name completeCase
+##' @title CompleteCases
+##' @description returns complete cases
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @return filtered ExpressionSet
 ##' @export
@@ -148,8 +149,9 @@ setMethod("completeCases", "ExpressionSet", function(object) {
 # Normalization
 # -----------------------------------------------------------
 
-##' normalized data
-##'
+##' @name normalizeData
+##' @title normalized data
+##' @description TODO
 ##' @param minIntensity minimal intensity for NA cutoff
 ##' @param FUN function for normalization
 ##' @import affyPLM
@@ -168,8 +170,9 @@ setMethod("normalizeData", "ExpressionSet", function(data, minIntensity=0, FUN=n
 # Transformation
 # -----------------------------------------------------------
 
-##' transforms data
-##'
+##' @name transformData
+##' @title transforms data
+##' @description transformation
 ##' @param FUN function for transformation
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @return transformed ExpressionSet
@@ -191,8 +194,9 @@ setMethod("transformData", "ExpressionSet",
 # Scaling
 # -----------------------------------------------------------
 
-##' scale data
-##'
+##' @name scaleData
+##' @title scale data
+##' @description TODO
 ##' @param scalefactor factor for scaling
 ##' @param FUN function for scaling
 ##' @importClassesFrom Biobase ExpressionSet
@@ -215,7 +219,9 @@ setMethod("scaleData", "ExpressionSet",
 # -----------------------------------------------------------
 
 
-#TODO
+##' @name getGroupData
+##' @title get group data
+##' @description TODO
 setMethod("getGroupData", "ExpressionSet",
       function(data, group, groupCol="groups", ...) {
          groupData <- exprs(data.transformed)[,rownames(pData(data)[pData(data.transformed)[,groupCol] == group,])]
@@ -248,8 +254,12 @@ setMethod("getGroupData", "ExpressionSet",
          return(ret)
 })
 
-
-# plot the NA counts
+##' @name plotMedianVsNAs
+##' @title plot median vs NAs
+##' @description plot the NA counts
+##' @param group group
+##' @param groupCol group column
+##' @export
 setMethod("plotMedianVsNAs", "ExpressionSet",
    function(data, group, groupCol="groups", ...) {
       g <- getGroupData(data.transformed, group=group, groupCol=groupCol)
@@ -263,7 +273,12 @@ setMethod("plotMedianVsNAs", "ExpressionSet",
    })
 
 
-
+##' @name plotMedianVsSD
+##' @title plot median vs SD
+##' @description TODO
+##' @param group group
+##' @param groupCol group column
+##' @export
 setMethod("plotMedianVsSD", "ExpressionSet",
           function(data, group, groupCol="groups", ...) {
              g <- getGroupData(data.transformed, group=group, groupCol=groupCol)
@@ -276,7 +291,10 @@ setMethod("plotMedianVsSD", "ExpressionSet",
                   cex  = 0.2)
           })
 
-
+##' @name plotNAsVsSD
+##' @title plot NAs versus standard deviation
+##' @description TODO
+##' @export
 setMethod("plotNAsVsSD", "ExpressionSet",
           function(data, group, groupCol="groups", ...) {
              g <- getGroupData(data.transformed, group=group, groupCol=groupCol)
@@ -290,7 +308,10 @@ setMethod("plotNAsVsSD", "ExpressionSet",
           })
 
 
-
+##' @name plotNAdensity
+##' @title plot NA density
+##' @description TODO
+##' @export
 setMethod("plotNAdensity", "ExpressionSet", function(data, group, groupCol="groups", ...) {
    # get preprocessed data for the groups
    g <- getGroupData(data, group=group, groupCol=groupCol)
@@ -339,7 +360,9 @@ setMethod("plotNAdensity", "ExpressionSet", function(data, group, groupCol="grou
 # imputation
 # -----------------------------------------------------------
 
-##' impute independent groups with amelia
+##' @name imputeIndependentGroupsWithAmelia
+##' @title impute independent groups with amelia
+##' @description impute independent groups with amelia
 ##'
 ##' @param scalefactor factor for scaling
 ##' @param FUN function for scaling
@@ -440,8 +463,12 @@ setMethod("imputeIndependentGroupsWithAmelia", "ExpressionSet", function(data.in
 # Manipulation
 # -----------------------------------------------------------
 
-
-# NA values will be replaced by given 'value'
+##' @name fillNAs
+##' @title fill NAs
+##' @description NA values will be replaced by given 'value'
+##' @param value value to replace NA
+##' @return complete data
+##' @export
 setMethod("fillNAs", c(object="ExpressionSet", value="numeric"), function(object, value) {
    tab <- exprs(object)
    tab[is.na(tab)] <- value
@@ -449,8 +476,11 @@ setMethod("fillNAs", c(object="ExpressionSet", value="numeric"), function(object
    return(object)
 })
 
-# this function will calculate a correlation matrix for the samples with given function.
-# by default it will calculate the correlations using the complete observations.
+##' @title calculateFeatureCorrelations
+##' @name calculateFeatureCorrelations
+##' @description this function will calculate a correlation matrix for the samples with given function.
+##' by default it will calculate the correlations using the complete observations.
+##' @export
 setMethod("calculateFeatureCorrelations", "ExpressionSet", function(object, use="pairwise.complete.obs", method="pearson") {
    # to cope with the standard deviation is zero problem
    filterForCor <- function(input) {

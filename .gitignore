@@ -10,3 +10,7 @@
 .toc
 .html
 .tar.gz
+limmas.Rproj
+build.sh
+limmas.Rcheck
+limmas_0.3.tgz

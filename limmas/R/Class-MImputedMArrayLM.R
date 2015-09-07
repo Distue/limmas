@@ -8,6 +8,9 @@ setMethod(f="getData", signature="MImputedMArrayLM", definition=function(object)
    return(object@data)
 })
 
+##' @title get the number of imputations
+##' @name getNumberImputations
+##' @description returns the number of imputations.
 ##' @export
 setMethod(f="getNumberImputations", signature="MImputedMArrayLM", definition=function(object) {
    return(length(object@data))
@@ -32,6 +35,10 @@ setMethod(f="getNumberImputations", signature="MImputedMArrayLM", definition=fun
 # })
 
 
+##' @name contrastFit
+##' @title contrast fit
+##' @description TODO
+##' @param contrasts contrasts
 ##' @export
 setMethod("contrastFit", "MImputedMArrayLM", function(fit, contrasts) {
    contrastMatrix <- makeContrasts(contrasts=contrasts, levels=fit@data[[1]]$design)
@@ -44,6 +51,10 @@ setMethod("contrastFit", "MImputedMArrayLM", function(fit, contrasts) {
    return(fit)
 })
 
+##' @name contrastLimit
+##' @title contrastLimit
+##' @description TODOß
+##' @param contrasts contrasts
 ##' @export
 setMethod("contrastLimit", "MImputedMArrayLM", function(fit, contrasts) {
    # for each contrast, get the detection limits
@@ -54,6 +65,11 @@ setMethod("contrastLimit", "MImputedMArrayLM", function(fit, contrasts) {
    return(fit)
 })
 
+##' @name vsFit
+##' @title vsFit
+##' @description TODO
+##' @param design design matrix
+##' @param vs vs TODO
 ##' @export
 setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="character"), function(fit, design, vs) {
    if (!vs %in% colnames(design)) {
@@ -62,6 +78,7 @@ setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="character"), f
    return(vsFit(fit, design, which(colnames(design)==vs)))
 })
 
+##' @rdname vsFit
 ##' @export
 setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="numeric"), function(fit, design, vs) {
    #create contrast
@@ -72,11 +89,17 @@ setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="numeric"), fun
    return(limmaContrastFit(data.list, design, contrast))
 })
 
+##' @name checkMissingness
+##' @title checkMissingness
+##' @description checks the missingness
 ##' @export
 setMethod("checkMissingness", "MImputedMArrayLM", function(data) {
    checkMissingness(eset(data, 1))
 })
 
+##' @name combineFits
+##' @title combineFits
+##' @description combines fits
 ##' @export
 setMethod("combineFits", "MImputedMArrayLM", function(fit) {
    efit.list <- fit@data

@@ -7,7 +7,7 @@ Maintainer: Thomas Schwarzl <schwarzl@embl.de>
 Author: Thomas Schwarzl <schwarzl@embl.de>, with contributions of Elisa D'Arcangelo, Norma Bargary, and Matthias Malovits
 Version: 0.4
 Depends: R (>= 2.11.0), limma
-Suggests: testthat, Amelia
+Suggests: testthat, Amelia, BiocStyle
 Imports: limma, Biobase, affyPLM
 License: LGPL (>= 3)
 Packaged: 2013-04-18 14:43:00 UTC; tom

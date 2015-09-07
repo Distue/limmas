@@ -1,5 +1,6 @@
-##' get the column name containing the original sample names
-##'
+##' @name originalNamesCol
+##' @title original names column
+##' @description get the column name containing the original sample names
 ##' @importClassesFrom Biobase AnnotatedDataFrame
 ##' @return column name
 ##' @export
@@ -7,10 +8,8 @@ setMethod("originalNamesCol", "SmartAnnotatedDataFrame", function(object) {
    return(slot(object, "originalNamesCol"))
 })
 
-##' set the column name containing the original sample names
-##'
+##' @rdname originalNamesCol
 ##' @importClassesFrom Biobase AnnotatedDataFrame
-##' @param value name
 ##' @export
 setReplaceMethod("originalNamesCol", "SmartAnnotatedDataFrame", function(object, value){
    slot(object, "originalNamesCol") <- value
@@ -18,8 +17,9 @@ setReplaceMethod("originalNamesCol", "SmartAnnotatedDataFrame", function(object,
    return(object)
 })
 
-##' get the column name containing the sample names
-##'
+##' @name sampleNamesCol
+##' @title sample names column
+##' @description get or set the column name containing the sample names
 ##' @importClassesFrom Biobase AnnotatedDataFrame
 ##' @return column name
 ##' @export
@@ -27,10 +27,8 @@ setMethod("sampleNamesCol", "SmartAnnotatedDataFrame", function(object) {
    return(slot(object, "sampleNamesCol"))
 })
 
-##' set the column name containing the sample names
-##'
+##' @rdname sampleNamesCol
 ##' @importClassesFrom Biobase AnnotatedDataFrame
-##' @param value name
 ##' @export
 setReplaceMethod("sampleNamesCol", "SmartAnnotatedDataFrame", function(object, value){
    slot(object, "sampleNamesCol") <- value
@@ -38,8 +36,9 @@ setReplaceMethod("sampleNamesCol", "SmartAnnotatedDataFrame", function(object, v
    return(object)
 })
 
-##' get original sample names
-##'
+##' @name getOriginalNames
+##' @title get original names
+##' @description get original sample names
 ##' @importClassesFrom Biobase AnnotatedDataFrame
 ##' @return vector of original sample names
 ##' @export
@@ -51,8 +50,9 @@ setMethod("getOriginalNames", "SmartAnnotatedDataFrame", function(object) {
    }
 })
 
-##' get new sample names
-##'
+##' @name getSampleNames
+##' @title get new sample names
+##' @description get new sample names
 ##' @importClassesFrom Biobase AnnotatedDataFrame
 ##' @return vector of newsample names
 ##' @export
@@ -65,8 +65,9 @@ setMethod("getSampleNames", "SmartAnnotatedDataFrame", function(object) {
 })
 
 
-##' get AnnotatedDataFrame
-##'
+##' @name getAnnotatedDataFrame
+##' @title get AnnotatedDataFrame
+##' @description get Annotated TODO
 ##' @importClassesFrom Biobase AnnotatedDataFrame
 ##' @return AnnotatedDataFrame
 ##' @export
@@ -100,8 +101,9 @@ setMethod("getAnnotatedDataFrame", "SmartAnnotatedDataFrame", function(object) {
 
 
 
-##' Overwriting the [ operator so that factors are releveled
-##'
+##' @name [
+##' @title [
+##' @description Overwriting the [ operator so that factors are releveled
 ##' @importClassesFrom Biobase AnnotatedDataFrame
 ##' @export
 setMethod("[", "SmartAnnotatedDataFrame", function(x, i, j, ..., drop = TRUE){
@@ -152,8 +154,9 @@ setMethod("[", "SmartAnnotatedDataFrame", function(x, i, j, ..., drop = TRUE){
 })
 
 
-##' Constructor
-##'
+##' @name SmartAnnotatedDataFrame
+##' @title Constructor
+##' @description TODO
 ##' @importClassesFrom Biobase AnnotatedDataFrame
 ##' @param sampleNamesCol column name containing sample names, "" for rownames
 ##' @param originalNamesCol column name containing original names, "" for rownames
