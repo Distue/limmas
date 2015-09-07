@@ -6,7 +6,7 @@ URL: http://titin.ucd.ie/~tom/limmas
 Maintainer: Thomas Schwarzl <schwarzl@embl.de>
 Author: Thomas Schwarzl <schwarzl@embl.de>, with contributions of Elisa D'Arcangelo, Norma Bargary, and Matthias Malovits
 Version: 0.4
-Depends: R (>= 2.11.0), limma
+Depends: R (>= 2.11.0)
 Suggests: testthat, Amelia, BiocStyle
 Imports: limma, Biobase, affyPLM
 License: LGPL (>= 3)
