@@ -3,7 +3,7 @@
 # Authors: Thomas Schwarzl <schwarzl@embl.de> with help from Elisa D'Arcangelo
 # holds ExpressionSets of multiple imputed data
 # --------------------------------------------------------
-
+# Constructor:
 ##' @rdname SmartAnnotatedDataFrame
 ##' @export
 SmartAnnotatedDataFrame <- function(sampleNamesCol = "", originalNamesCol = "", ...){
@@ -12,7 +12,7 @@ SmartAnnotatedDataFrame <- function(sampleNamesCol = "", originalNamesCol = "", 
               originalNamesCol = originalNamesCol,
               ...))
 }
-
+# --------------------------------------------------------
 
 ##' @name originalNamesCol
 ##' @title original names column
@@ -27,7 +27,7 @@ setMethod("originalNamesCol", "SmartAnnotatedDataFrame", function(object) {
 ##' @rdname originalNamesCol
 ##' @importClassesFrom Biobase AnnotatedDataFrame
 ##' @export
-setReplaceMethod("originalNamesCol", "SmartAnnotatedDataFrame", function(object, value){
+setReplaceMethod("originalNamesCol", "SmartAnnotatedDataFrame", function(object, value) {
    slot(object, "originalNamesCol") <- value
    validObject(object)
    return(object)

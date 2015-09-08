@@ -1,9 +1,9 @@
 # --------------------------------------------------------
 # Class MImputedMArrayLM
-# Authors: Thomas Schwarzl <schwarzl@embl.de>
+# Authors: Thomas Schwarzl <schwarzl@embl.de> with help from Elisa D'Arcangelo
 # MArrayLM of multiple imputed data
 # --------------------------------------------------------
-
+# Constructor:
 ##' @rdname MImputedExpressionSets
 ##' @export
 MImputedMArrayLM <- function(data,
@@ -12,7 +12,7 @@ MImputedMArrayLM <- function(data,
               data   = data,
               ...))
 }
-
+# --------------------------------------------------------
 
 
 ##' @title getData
@@ -88,8 +88,11 @@ setMethod("contrastLimit", "MImputedMArrayLM", function(fit, contrasts) {
 ##' @description TODO
 ##' @param design design matrix
 ##' @param vs vs TODO
+##' @return return RODO
 ##' @export
-setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="character"), function(fit, design, vs) {
+setMethod("vsFit", c(fit    = "MImputedMArrayLM",
+                     design = "matrix",
+                     vs     = "character"), function(fit, design, vs) {
    if (!vs %in% colnames(design)) {
       stop("'vs' is not a colname of design")
    }
@@ -98,7 +101,9 @@ setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="character"), f
 
 ##' @rdname vsFit
 ##' @export
-setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="numeric"), function(fit, design, vs) {
+setMethod("vsFit", c(fit    = "MImputedMArrayLM",
+                     design = "matrix",
+                     vs     = "numeric"), function(fit, design, vs) {
    #create contrast
    selected.group <- colnames(design)[vs]
    other.groups   <- colnames(design)[-vs]
@@ -108,8 +113,9 @@ setMethod("vsFit", c(fit="MImputedMArrayLM", design="matrix", vs="numeric"), fun
 })
 
 ##' @name checkMissingness
-##' @title checkMissingness
+##' @title check missingness
 ##' @description checks the missingness
+##' @return TODO
 ##' @export
 setMethod("checkMissingness", "MImputedMArrayLM", function(data) {
    checkMissingness(eset(data, 1))
@@ -119,6 +125,7 @@ setMethod("checkMissingness", "MImputedMArrayLM", function(data) {
 ##' @title combineFits
 ##' @param fit fit
 ##' @description combines fits
+##' @return TODO
 ##' @export
 setMethod("combineFits", "MImputedMArrayLM", function(fit) {
    efit.list <- fit@data

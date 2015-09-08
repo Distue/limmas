@@ -3,7 +3,7 @@
 # Authors: Thomas Schwarzl <schwarzl@embl.de> with help from Elisa D'Arcangelo
 # holds ExpressionSets of multiple imputed data
 # --------------------------------------------------------
-
+# Constructor:
 ##' @rdname MImputedExpressionSets
 ##' @export
 MImputedExpressionSets <- function(data,
@@ -22,21 +22,25 @@ MImputedExpressionSets <- function(data,
               groupData            = groupData,
               ...))
 }
-
+# --------------------------------------------------------
 
 ##' @name getOriginalData
 ##' @title get orginial data
 ##' @description return the original Expression Set wherefrom the imputed values were created
 ##' @export
-setMethod("getOriginalData", "MImputedExpressionSets", definition=function(object) {
+setMethod("getOriginalData", "MImputedExpressionSets", function(object) {
    return(object@originalData)
 })
 
 ##' @name minPresent
-##' @title minimum present
+##' @title set and get minimum present
+##' @param value minimal present
 ##' @description minimum of present
+##' @return minPresent
 ##' @export
-setMethod(minPresent, "MImputedExpressionSets", function(object) slot(object, "minPresent"))
+setMethod(minPresent, "MImputedExpressionSets", function(object) {
+   slot(object, "minPresent")
+})
 
 
 ##' @rdname minPresent
@@ -57,30 +61,49 @@ setReplaceMethod("minPresent", "MImputedExpressionSets", function(object, value)
 # })
 
 ##' @name groupingCol
-##' @title grouping columns
+##' @title get and set grouping columns
 ##' @description TODO
+##'
+##' Getter:
+##'    groupingCol(x)
+##'    getGroupingCol(x)
+##' Setter:
+##'    setGroupingCol(x, value)
+##'    groupingCol(x) <- value
 ##' @param value value
+##' @return grouping column as character
 ##' @export
-setMethod(groupingCol, "MImputedExpressionSets", function(object) slot(object, "groupingCol"))
+setMethod(groupingCol, "MImputedExpressionSets", function(object) {
+   slot(object, "groupingCol")
+})
+
+##' @rdname groupingCol
+##' @export
 setReplaceMethod("groupingCol", "MImputedExpressionSets", function(object, value) {
    slot(object, "groupingCol") <- value
    validObject(object)
    return(object)
 })
 
-##' @name getGroupingCol
-##' @title gets the grouping column
-##' @description TODO
+##' @rdname groupingCol
 ##' @export
 setMethod("getGroupingCol", "MImputedExpressionSets", function(object) {
    return(object@groupingCol)
 })
 
 ##' @name numberImputations
-##' @title number of imputations
-##' @description TODO
+##' @title get or set number of imputations
+##' @description
+##'
+##' Getter
+##'   numberImputations(x)
+##' Setter
+##'   numberImputations(x) <- value
+##' @return number of imputations as ßnumeric
 ##' @export
-setMethod(numberImputations, "MImputedExpressionSets", function(object) slot(object, "numberImputations"))
+setMethod(numberImputations, "MImputedExpressionSets", function(object) {
+   slot(object, "numberImputations")
+})
 
 ##' @rdname numberImputations
 ##' @export
@@ -159,10 +182,13 @@ setMethod("completeCases", "MImputedExpressionSets", function(object) {
 ##' @name filterRows
 ##' @title filterRows filter
 ##' @description TODO
+##' @param filter vector for filtering
 ##' @return filter all rows
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @export
-setMethod("filterRows", signature = c(object = "MImputedExpressionSets", filter = "logical"), function(object, filter) {
+setMethod("filterRows",  c(object = "MImputedExpressionSets",
+                           filter = "logical"), function(object,
+                                                         filter) {
    object@data  <- lapply(object@data, function(x) filterRows(x, filter))
    return(object)
 })
@@ -170,10 +196,13 @@ setMethod("filterRows", signature = c(object = "MImputedExpressionSets", filter 
 ##' @name filterCols
 ##' @title filter columns
 ##' @description filterCols filter
+##' @param filter vector for filtering
 ##' @return filter all columns
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @export
-setMethod("filterCols",  c(object = "MImputedExpressionSets", filter = "logical"), function(object, filter) {
+setMethod("filterCols",  c(object = "MImputedExpressionSets",
+                           filter = "logical"), function(object,
+                                                         filter) {
    object@data  <- lapply(object@data, function(x) filterCols(x, filter))
    return(object)
 })
@@ -184,14 +213,19 @@ setMethod("filterCols",  c(object = "MImputedExpressionSets", filter = "logical"
 ##' @param value value to replace NAs
 ##' @return MIputedExpressionSets with replaced NAs
 ##' @export
-setMethod("fillNAsWithValues", c(object = "MImputedExpressionSets", value = "numeric"), function(object, value) {
+setMethod("fillNAsWithValues", c(object = "MImputedExpressionSets",
+                                 value = "numeric"), function(object,
+                                                              value) {
    object@data  <- lapply(object@data, function(x) fillNAs(x, value))
    return(object)
 })
 
 ##' @rdname plotExpression
 ##' @export
-setMethod("plotExpression", c(object = "MImputedExpressionSets", ID = "character"), function(object, ID, ...) {
+setMethod("plotExpression", c(object = "MImputedExpressionSets",
+                              ID      = "character"        ), function(object,
+                                                                       ID,
+                                                                       ...) {
    id <- which(annotation(object) == ID)
    if (length(id) == 0) {
       stop(paste("id '", ID, "' not found", sep=""))
@@ -210,11 +244,13 @@ setMethod("plotExpression", c(object = "MImputedExpressionSets", ID = "character
 ##' @param colors colors
 ##' @param samplelabels labels for plot
 ##' @export
-setMethod("plotExpression", c(object = "MImputedExpressionSets", ID = "numeric"), function(object, ID,
-                                                   groupingCol = getGroupingCol(object),
-                                                   colors = topo.colors(length(unique(pData(object)[,groupingCol]))),
-                                                   samplelabels = rownames(pData(object)),
-                                                   ... ) {
+setMethod("plotExpression", c(object = "MImputedExpressionSets",
+                              ID     = "numeric"), function(object,
+                                                            ID,
+                                                            groupingCol = getGroupingCol(object),
+                                                            colors = topo.colors(length(unique(pData(object)[,groupingCol]))),
+                                                            samplelabels = rownames(pData(object)),
+                                                            ... ) {
    if (!is.character(groupingCol)) {
       stop("groupingCol is not a character string")
    }
@@ -287,6 +323,10 @@ setMethod("getAverageExpression", "MImputedExpressionSets", function(object) {
 ##' @name [
 ##' @title [
 ##' @description selects subset of MImputedExpressionSets
+##' @param x x
+##' @param i i
+##' @param j j
+##' @param drop drop
 ##' @return subset MImputedExpressionSets
 ##' @export
 setMethod("[", "MImputedExpressionSets", function(x, i, j, ..., drop = TRUE) {
@@ -324,7 +364,7 @@ setMethod("calcGroupEstimations", "MImputedExpressionSets", function(object) {
 ##' @title estimate limits
 ##' @description TODO
 ##' @param design design
-##' @param contrast contrast
+##' @param contrasts contrasts
 ##' @export
 setMethod("estimateLimits", "MImputedExpressionSets", function(object, design, contrasts) {
    #if(is.null(object@groupData)) {

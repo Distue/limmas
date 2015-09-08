@@ -90,7 +90,7 @@ setGeneric("groupingCol", function(object) standardGeneric("groupingCol"))
 ##' @export
 setGeneric("groupingCol<-", function(object, value) standardGeneric("groupingCol<-"))
 
-##' @rdname getGroupingCol
+##' @rdname groupingCol
 ##' @export
 setGeneric("getGroupingCol", function(object) standardGeneric("getGroupingCol"))
 
@@ -102,18 +102,7 @@ setGeneric("numberImputations", function(object) standardGeneric("numberImputati
 ##' @export
 setGeneric("numberImputations<-", function(object, value) standardGeneric("numberImputations<-"))
 
-##' @rdname pData
-##' @export
-setGeneric("pData", function(object) standardGeneric("pData"))
 
-
-##' @rdname fData
-##' @export
-setGeneric("fData", function(object) standardGeneric("fData"))
-
-##' @rdname annotation
-##' @export
-setGeneric("annotation", function(object) standardGeneric("annotation"))
 
 ##' @rdname eset
 ##' @export

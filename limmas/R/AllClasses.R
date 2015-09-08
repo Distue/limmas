@@ -1,12 +1,14 @@
 # ---------------------------------------------------------------------------
 # Description: Class definition file.
-# Authors: Thomas Schwarzl <schwarzl@embl.de>
+# Authors: Thomas Schwarzl <schwarzl@embl.de> with help from Elisa D'Arcangelo
 # This file will be loaded first and contains all class definitions of
 # limmas. This is required for using all the classes in the functions.
 # ---------------------------------------------------------------------------
 
 ##' @title SmartAnnotatedDataFrame object and constructor
 ##' @name SmartAnnotatedDataFrame
+##' @param sampleNamesCol column name containing sample names
+##' @param originalNamesCol column name containing original names
 ##' @description This is extends an AnnotatedDataFrame for some useful functions
 ##' like management of original names and new sample names or
 ##' releveling factors in the data frame after subsetting.
@@ -56,6 +58,7 @@ setClass("MImputedExpressionSets",
 
 ##' @title MImputedMArrayLM object and constructor
 ##' @name MImputedMArrayLM
+##' @param data list of MArrayLM objects
 ##' @description This class manages a list of MArrayLM object (from limma) for
 ##' each imputated data set
 ##' @rdname MImputedMArrayLM
@@ -73,6 +76,11 @@ setClass("MImputedMArrayLM",
 
 ##' @title CombinedMArrayLM object and constructor
 ##' @name CombinedMArrayLM
+##' @param ids ids
+##' @param coefficients coefficient matrix
+##' @param tstat tstat matrix
+##' @param p.value p.value matrix
+##' @param feature.list data.frame
 ##' @description This class is a result of combining multiple MArrayLM objects
 ##' @rdname CombinedMArrayLM
 ##' @aliases CombinedMArrayLM-class

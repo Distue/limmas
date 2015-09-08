@@ -3,7 +3,7 @@
 # Authors: Thomas Schwarzl <schwarzl@embl.de> with help from Elisa D'Arcangelo
 # Combined MArrayLM from multiple imputation data
 # --------------------------------------------------------
-
+# Constructor:
 ##' @rdname MImputedExpressionSets
 ##' @export
 CombinedMArrayLM <- function(ids,
@@ -20,7 +20,7 @@ CombinedMArrayLM <- function(ids,
               featurelist    = featurelist,
               ...))
 }
-
+# --------------------------------------------------------
 
 ##' @title topTableImpute
 ##' @name topTableImpute
@@ -114,7 +114,7 @@ setMethod("topTableImpute", "CombinedMArrayLM", function(fit,
 
 
 
-##' @title getSignificantFeatures
+##' @title get significant features
 ##' @name getSignificantFeatures
 ##' @description This function is a modification of the topTable function in the limma package to work with the imputated dataset
 ##' @param fit is a CombinedMArrayLM object
@@ -128,7 +128,7 @@ setMethod("topTableImpute", "CombinedMArrayLM", function(fit,
 ##' @return top result table
 ##' @export
 setMethod("getSignificantFeatures", "CombinedMArrayLM", function(fit,
-                                                                 p.value = 0.05,
+                                                                 p.value      = 0.05,
                                                                  onlyPositive = F,
                                                                  onlyNegative = F,
                                                                  logFCcutoff  = 0,
@@ -153,7 +153,9 @@ setMethod("getSignificantFeatures", "CombinedMArrayLM", function(fit,
 ##' @param fit is a CombinedMArrayLM object
 ##' @param file file name
 ##' @export
-setMethod("writeSignificantFeatures", c(fit="CombinedMArrayLM", file="character"), function(fit, file,  ...) {
+setMethod("writeSignificantFeatures", c(fit="CombinedMArrayLM", file="character"), function(fit,
+                                                                                            file,
+                                                                                            ...) {
    tt <- getSignificantFeatures(fit,  ...)
    write.table(tt, file=file, sep="\t", quote=F, row.names=F)
 })
@@ -170,7 +172,14 @@ setMethod("writeSignificantFeatures", c(fit="CombinedMArrayLM", file="character"
 ##' @param mode and / or logic
 ##' @return filter
 ##' @export
-setMethod("getFeatureFilter", c(fit="CombinedMArrayLM", data="MImputedExpressionSets"), function(fit, data, p.value=0.05, adjust="BH", onlyPositive=T, onlyNegative=F, mode="or", ...) {
+setMethod("getFeatureFilter", c(fit="CombinedMArrayLM", data="MImputedExpressionSets"), function(fit,
+                                                                                                 data,
+                                                                                                 p.value=0.05,
+                                                                                                 adjust="BH",
+                                                                                                 onlyPositive=T,
+                                                                                                 onlyNegative=F,
+                                                                                                 mode="or",
+                                                                                                 ...) {
    ncoef <- ncol(fit@coefficients)
 
    tt <- lapply(1:ncoef, function(x) {
@@ -200,6 +209,8 @@ setMethod("getFeatureFilter", c(fit="CombinedMArrayLM", data="MImputedExpression
 ##' @param data data
 ##' @return filtered data
 ##' @export
-setMethod("filterFeatures", c(fit="CombinedMArrayLM", data="MImputedExpressionSets"), function(fit, data, ...) {
+setMethod("filterFeatures", c(fit="CombinedMArrayLM", data="MImputedExpressionSets"), function(fit,
+                                                                                               data,
+                                                                                               ...) {
    return(data[getFeatureFilter(fit, data, ...),])
 })
