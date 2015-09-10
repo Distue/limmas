@@ -276,12 +276,12 @@ setMethod("plotMedianVsNAs", "ExpressionSet",
    function(data, group, groupCol="groups", ...) {
       g <- getGroupData(data.transformed, group=group, groupCol=groupCol)
 
-      plot(g[["medianExpression"]], g[["naCount"]],
-      main = paste(group, " (", ncol(g[["groupData"]]), " samples)", sep=""),
-      ylab = "NA count",
-      xlab = "median expression",
-      type = "p",
-      cex  = 0.2)
+      boxplot(g[["medianExpression"]]~g[["naCount"]],
+            main = paste(group, " (", ncol(g[["groupData"]]), " samples)", sep=""),
+            xlab = "NA count",
+            ylab = "median expression",
+            type = "p",
+            cex  = 0.2)
    })
 
 
@@ -313,12 +313,12 @@ setMethod("plotNAsVsSD", "ExpressionSet",
           function(data, group, groupCol="groups", ...) {
              g <- getGroupData(data.transformed, group=group, groupCol=groupCol)
 
-             plot(g[["naCount"]], g[["sdExpression"]],
-                  main = paste(group, " (", ncol(g[["groupData"]]), " samples)", sep=""),
-                  ylab = "standard deviation",
-                  xlab = "NA count",
-                  type = "p",
-                  cex  = 0.2)
+            boxplot(g[["sdExpression"]]~g[["naCount"]],
+                    main = paste(group, " (", ncol(g[["groupData"]]), " samples)", sep=""),
+                    ylab = "standard deviation",
+                    xlab = "NA count",
+                    type = "p",
+                    cex  = 0.2)
           })
 
 

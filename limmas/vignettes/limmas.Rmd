@@ -14,7 +14,6 @@ bibliography: bibliography.bibtex
 
 ```{r, echo=FALSE} 
 suppressPackageStartupMessages(library(BiocStyle))
-suppressPackageStartupMessages(library(knitr))
 ```
 
 ```{r, echo=FALSE, eval=FALSE} 
@@ -23,16 +22,334 @@ suppressPackageStartupMessages(library(knitr))
 # Suggests: BiocStyle, knitr, rmarkdown
 ```
 
-# Introduction
-
+# Abstract
 Quantitative mass spectrometry (MS) allows the analysis of quantitative high-throughput proteomics data. For each 
-protein analysed, a mass spectrum is generated which allows protein identification and assessment of protein abundance levels. Despite the remarkable power of MS technology, finding quantitative differences among proteins levels in distinct physiological conditions remains a challenging task [@Bantscheff2007]. This is especially true for data sets characterised by a high level of missing values, which is a characteristic frequently seen in MS output data sets (Ref). 
+protein analysed, a mass spectrum is generated which allows protein identification and assessment of protein abundance levels. Despite the remarkable power of MS technology, finding quantitative differences among proteins levels in distinct physiological conditions remains a challenging task. This is especially true for data sets characterised by a high level of missing values, which is a characteristic frequently seen in MS output data sets [@Karpievitch2012]. 
 
-Statistical software used for the identification of differentially expressed proteins typically require the data to be complete. Methods for dealing with missing data are usually inappropriate in that substantial amounts of information is lost and the data distribution is skewed; other, more efficient techniques present themselves as complicated to implement and data set-specific (Ref, http://sites.stat.psu.edu/~jls/mifaq.html). 
+Statistical software used for the identification of differentially expressed proteins typically require the data to be complete. Methods for dealing with missing data are usually inappropriate in that substantial amounts of information is lost and the data distribution is skewed; other, more efficient techniques present themselves as complicated to implement and data set-specific. 
 
-Multiple imputation (MI) emerges as an interesting, easy to implement alternative for analysing incomplete data (Ref). MI is a Monte Carlo technique which substitutes missing values with \emph{m \textgreater  1} estimated values (m typically amounts to 3-10), thereby producing \emph{m \textgreater  1} complete data sets. Each one of these is individually analysed with the statistical method of choice and the results are then pooled into estimates, whereby missing-data uncertainty is incorporated (Ref: http://sites.stat.psu.edu/~jls/mifaq.html).
+Multiple imputation (MI) emerges as an interesting, easy to implement alternative for analysing incomplete data [@Rubin1987]. Multiple imputation is a Monte Carlo technique which substitutes missing values with *m >  1* estimated values (m typically amounts to 3-10), thereby producing *m > 1* complete data sets. Each one of these is individually analysed with the statistical method of choice and the results are then pooled into estimates, whereby missing-data uncertainty is incorporated [@VanBuuren2012] (http://sites.stat.psu.edu/~jls/mifaq.html).
 
-In our approach, we show how incomplete protein entries can be salvaged using MI and the full amount of MS information subsequently used for differential protein expression analysis. Analysis of differential protein expression is  carried out with linear models and empiric Bayes method of the Linear Models for Microarray Data (`r Biocpkg("limma")`) package [@Smyth2005]. limma allows to fit a linear model to the expression data of each protein, whereby both simple experiments and experimental designs involving several groups and factors as well as time course experiments can be handled effectively.
+In our approach, we show how incomplete protein entries can be salvaged using multiple imputation and the full amount of mass spec information subsequently used for differential protein expression analysis. Analysis of differential protein expression is  carried out with linear models and empiric Bayes method of the Linear Models for Microarray Data (`r Biocpkg("limma")`) package [@Smyth2005]. limma allows to fit a linear model to the expression data of each protein, whereby both simple experiments and experimental designs involving several groups and factors as well as time course experiments can be handled effectively.
+
+
+# Introduction
+## The problem with missing values
+
+Due to techical reasons, (i) incomplete or incorrect peptide identification, (ii)
+the presence of peptides that are below the detection limit of the instrument, or (iii)
+the presence of low-abundance peptides [@Karpievitch2012], mass spectrometry data contains missing values. A typical data matrix one has to work with looks like this (missing values are denoted as NA): 
+
+```
+            GroupA     GroupA     GroupA    GroupB    GroupB   GroupB 
+            SampleA    SampleB    SampleC   SampleD   SampleE  SampleF
+ProteinA    10         NA          8        13        NA       NA
+ProteinB    NA         4           NA       5         4        8
+ProteinC    9          10          9        NA        NA       11
+ProteinD    15         14          16       12        11       13
+ProteinE    NA         NA          6        10        10       NA
+ProteinF    14         13          14       NA        NA       NA
+```
+
+There are different strategies for working with such sparse data sets:
+
+### Strategy 1: Use complete rows only
+
+Only using complete rows would result in losing a data points, in fact 
+whole features (proteins) would be removed. This problem increases with number of samples, since missing values can occur in any sample. In high dimensional samples most of the data set would be lost.
+
+### Strategy 2: Fill in the missing values with averages of each group
+
+If we would fill in the gaps with the average of each group, then every
+generated data point would be exactly in the range of the measured of the 
+other replicates. This would 'fake' precision and will ultimately add 
+false confidence to your measurement resulting in wrong estimates and results.
+
+### Strategy 3: Ignore missing values and compare average ratios
+
+One can compute statistics with the values given and e.g. average over them and 
+just build a ratio over the average. Again this adds a bias ignoring the real
+variance of the feature and will not give any measurement of statistical significance.
+
+### Strategy 4: Ignore missing values and do statistics
+
+This approach would just do statistics ignoring missing values. In this approach, the variances will not be estimated correctly which will lead to wrong observations and results, especially in cases with few observations.
+
+### Strategy 5: Impute values and fill up data 
+
+Let's use statistics and fill up the gaps in the data set with estimated values. However it was shown that this increases noise [@Rubin1987] which will have an negatively impact on the results.
+
+### Strategy 6: Multiple imputations
+
+Multiple imputations was developed to cope with too small standard errors from imputes values [@Rubin1996,@VanBuuren2012]. By filling missing values multiple times (usually 3 to 10 times), analysing each filled up data set separately and then statistically combining (pooling) the individual results, the method outperforms all other strategies mentioned.
+
+A typical workflow using multiple imputation looks like this:
+
+```{r, eval=TRUE, echo=FALSE} 
+plot(10, type="n", axes=F, xlab="", ylab="")
+
+text(x = 0.9, y = 14, labels = "data with")
+text(x = 0.9, y = 13.5, labels = "missing values")
+
+text(x = 1.3, y = 12.8, font=3, labels = "multiple", cex=0.9)
+text(x = 1.3, y = 12.3, font=3, labels = "imputation", cex=0.9)
+
+lines(x = c(0.9, 0.7 ), y = c(13, 12))
+text(x = 0.7 , y = 11.5, labels = "complete")
+text(x = 0.7 , y = 11, labels = "data")
+
+lines(x = c(0.9, 0.85), y = c(13, 12))
+text(x = 0.85, y = 11.5, labels = "complete")
+text(x = 0.85, y = 11, labels = "data")
+
+lines(x = c(0.9, 1), y = c(13, 12))
+text(x = 1, y = 11.5, labels = "...")
+text(x = 1, y = 11, labels = "...")
+
+lines(x = c(0.9, 1.1), y = c(13, 12))
+text(x = 1.1, y = 11.5, labels = "complete")
+text(x = 1.1, y = 11, labels = "data")
+
+
+text(x = 1.3, y = 11, font=3, labels = "analyses", cex=0.9)
+text(x = 1.3, y = 10.5, font=3, labels = "of individual", cex=0.9)
+text(x = 1.3, y = 10, font=3, labels = "data sets", cex=0.9)
+
+lines(x = c(0.7 , 0.7 ), y = c(10.5, 10))
+text(x = 0.7 , y = 9.5, labels = "individual")
+text(x = 0.7 , y = 9, labels = "result")
+
+lines(x = c(0.85, 0.85), y = c(10.5, 10))
+text(x = 0.85, y = 9.5, labels = "individual")
+text(x = 0.85, y = 9, labels = "result")
+
+lines(x = c(1, 1), y = c(10.5, 10))
+text(x = 1, y = 9.5, labels = "...")
+text(x = 1, y = 9, labels = "...")
+
+lines(x = c(1.1, 1.1), y = c(10.5, 10))
+text(x = 1.1, y = 9.5, labels = "individual")
+text(x = 1.1, y = 9, labels = "result")
+
+
+lines(x = c(0.7, 0.9), y = c(8.5, 7.5))
+lines(x = c(0.85, 0.9), y = c(8.5, 7.5))
+lines(x = c(1, 0.9), y = c(8.5, 7.5))
+lines(x = c(1.1, 0.9), y = c(8.5, 7.5))
+
+text(x = 0.9, y = 7, labels = "combined result")
+
+text(x = 1.3, y = 8.1, font=3, labels = "pooling", cex=0.9)
+
+```
+
+
+In this package we provide a framework for multiple imputations. We implemented multiple imputations using the package Amelia II [@Honaker2011]. Users can use their own multiple imputation methods if wanted. 
+
+The analysis and the statistical pooling are described in the next section.
+
+## Analysis with linear models and multiple imputation
+
+For the statistical analysis we use linear models on the 
+*m* different imputed data sets. Linear models can be used 
+for multifactorial designs which become more popular with the 
+current developments in the MS field. Also, e.g. batch effects 
+can be modeled in in the statistical analysis.
+
+Here we make use of the fantastic
+linear models for microarray (`r Biocpkg("limma")`) package. The 
+analysis of MS data is very similar to microarray analysis, 
+except the problem with the missing values in MS data. We cope 
+with this issue using the multiple imputation approach. `r Biocpkg("limma")`
+is extremely flexible, if you have no experience with `r Biocpkg("limma")`,
+please go and have a look at their extremely well documented vignette. 
+
+When analysing microarray data with the package `r Biocpkg("limma")`,
+the workflow after preprocessing, filtering and transformation looks like this:
+
+```{r, eval=TRUE, echo=FALSE} 
+plot(10, type="n", axes=F, xlab="", ylab="")
+
+text(x = 0.75, y = 14, labels = "raw data")
+text(x = 1.1, y = 14, font=2, labels = "ExpressionSet", cex=1)
+
+text(x = 1.1, y = 12.5, font=3, labels = "linear")
+text(x = 1.1, y = 12, font=3, labels = "models")
+
+lines(x = c(0.75, 0.75), y = c(13, 11))
+
+text(x = 0.75, y = 10.5, labels = "fitted")
+text(x = 0.75, y = 9.5, labels = "model")
+
+text(x = 1.1, y = 10, font=2, labels = "MArrayLM", cex=1)
+
+text(x = 1.1, y = 8.5,   labels = "significance", font=3)
+text(x = 1.1, y = 8, labels = "testing", font=3)
+
+lines(x = c(0.75, 0.75), y = c(9, 7))
+text(x = 0.75, y = 6, labels = "results")
+```
+
+The raw data is stored as ExpressionSet class and linear models are fit to the raw data features resulting in a MArrayLM object. Significance testing is performed and returns usually a data frame containing p-value, adjusted p-values (corrected for multiple hypothesis testing) and log fold changes.
+
+When introducing multiple imputation, the new workflow looks like this:
+
+```{r, eval=TRUE, echo=FALSE} 
+plot(10, type="n", axes=F, xlab="", ylab="")
+
+text(x = 0.9, y = 14, labels = "raw data")
+text(x = 1.3, y = 14, font=2, labels = "ExpressionSet", cex=0.8)
+
+text(x = 1.3, y = 13.2, font=3, labels = "multiple", cex=0.9)
+text(x = 1.3, y = 12.8, font=3, labels = "imputation", cex=0.9)
+
+lines(x = c(0.9, 0.7 ), y = c(13.5, 12.5))
+text(x = 0.7 , y = 12, labels = "complete")
+text(x = 0.7 , y = 11.5, labels = "data")
+
+lines(x = c(0.9, 0.85), y = c(13.5, 12.5))
+text(x = 0.85, y = 12, labels = "complete")
+text(x = 0.85, y = 11.5, labels = "data")
+
+lines(x = c(0.9, 1), y = c(13.5, 12.5))
+text(x = 1, y = 12, labels = "...")
+text(x = 1, y = 11.5, labels = "...")
+
+lines(x = c(0.9, 1.1), y = c(13.5, 12.5))
+text(x = 1.1, y = 12, labels = "complete")
+text(x = 1.1, y = 11.5, labels = "data")
+
+
+text(x = 1.3, y = 12, font=2, labels = "MImputed", cex=0.8)
+text(x = 1.3, y = 11.6, font=2, labels = "ExpressionSets", cex=0.8)
+
+text(x = 1.3, y = 11, font=3, labels = "linear", cex=0.9)
+text(x = 1.3, y = 10.6, font=3, labels = "models", cex=0.9)
+
+lines(x = c(0.7 , 0.7 ), y = c(11, 10.5))
+text(x = 0.7 , y = 10, labels = "fitted")
+text(x = 0.7 , y = 9.5, labels = "model")
+
+lines(x = c(0.85, 0.85), y = c(11, 10.5))
+text(x = 0.85, y = 10, labels = "fitted")
+text(x = 0.85, y = 9.5, labels = "model")
+
+lines(x = c(1, 1), y = c(11, 10.5))
+text(x = 1, y = 10, labels = "...")
+text(x = 1, y = 9.5, labels = "...")
+
+lines(x = c(1.1, 1.1), y = c(11, 10.5))
+text(x = 1.1, y = 10, labels = "fitted")
+text(x = 1.1, y = 9.5, labels = "model")
+
+text(x = 1.3, y = 9.9, font=2, labels = "MImputed",       cex=0.8)
+text(x = 1.3, y = 9.5, font=2, labels = "MArrayLM", cex=0.8)
+
+lines(x = c(0.7, 0.9), y = c(9, 8))
+lines(x = c(0.85, 0.9), y = c(9, 8))
+lines(x = c(1, 0.9), y = c(9, 8))
+lines(x = c(1.1, 0.9), y = c(9, 8))
+
+text(x = 0.9, y = 7.5, labels = "combined model")
+
+text(x = 1.3, y = 8.6, font=3, labels = "pooling", cex=0.9)
+
+text(x = 1.3, y = 7.9, font=2,   labels = "Combined",   cex=0.8)
+text(x = 1.3, y = 7.5, font=2, labels = "MArrayLM",   cex=0.8)
+
+text(x = 1.3, y = 6.7,   labels = "significance", font=3, cex=0.9)
+text(x = 1.3, y = 6.3, labels = "testing", font=3, cex=0.9)
+
+lines(x = c(0.9, 0.9), y = c(7.0, 6.5))
+text(x = 0.9, y = 6, labels = "results")
+```
+
+After using linear models on the *m* imputed data sets, the 
+results have to be statistically *pooled*. This is important 
+to adjust for in-between and across data set variablity.
+Here, we included this functionality for 
+easy pooling and significance testing of the results.
+
+### Pooling 
+
+The pooling is important to adjust for variablity within and between the
+different imputed results. 
+
+Once m imputed datasets have been generated, the model required for the full
+dataset is fitted to each of the m imputed versions. This results in m model fits 
+and m estimates of the parameter(s) of interest. Denote these estimates by 𝜃!, 𝜃!,…, 𝜃!.
+Each fitted model also provides an estimate of the variance of the corresponding
+𝜃!, 𝑗 = 1,…, 𝑛. For example, the model fitted to dataset 1 will provide an estimate
+𝜃! for the parameter(s) and an estimate 𝜎!
+! for the variance of 𝜃!. This results in
+values for 𝜃!, 𝜃!,…, 𝜃! and corresponding variance estimates 𝜎!
+!, 𝜎!
+!,…, 𝜎!
+! , which
+are required for statistical inference. Once these values have been computed, they
+then need to be combined to get the overall estimates.
+The parameter estimates 𝜃!, 𝜃!,…, 𝜃! are averaged to get the final MI parameter
+estimate:
+𝜃!" =
+1
+𝑛
+𝜃!
+!
+!!!
+However, we cannot simply average the variance estimates as there is now some
+additional uncertainty since imputation has been used. Each imputed dataset will
+be different (i.e. the imputed values will vary from dataset to dataset) and thus the
+parameter estimates from the model fitted to each dataset will also vary. As a result,
+there is variability within each imputed dataset (as quantified by the 𝜎!
+! values), but
+there is also variability between the imputed datasets (i.e. there is additional
+variability introduced due to the imputation). Simply averaging the 𝜎!
+! values only
+provides information about the variability within imputations. Therefore it is
+necessary to quantify and combine both the within and the between sources of
+variability to get the appropriate overall variance value to be used for inference.
+Within imputation variance 𝜎!
+! = !
+! 𝜎!
+! !!
+!!
+Between imputation variance 𝜎!
+! = !
+!!! (𝜃! − !!
+!! 𝜃!")!
+
+
+Total variance 𝜎!"
+! = 1 + !
+! 𝜎!
+! + 𝜎!
+!
+Confidence intervals and hypothesis tests can then be performed using 𝜃!" and 𝜎!"
+!
+instead of the individual results from each imputed dataset.
+
+
+## Detection limit 
+
+Missing values within a MS data set are the result of random or systematic
+detection errors. It is therefore often hard to determine, especially for
+proteins close to the detection limit, whether an entity is truly missing
+or simply not recorded. 
+
+Knowing how likely any protein entity is missing in a given sample is
+therefore a useful insight that aids in the decision of pinpointing a
+threshold for true negative detection. 
+
+Replicates can be used to determine missing values introduced by random errors. 
+Those can be filled up statistically with imputation methods as described above.
+Then we are left with missing values due to the left cencoring caused by the
+detection limit.
+
+In biological, we often want to know if the protein is **higher** abundant 
+in one group where it could not be detected. In this package we provide a 
+method to first estimate a detection limit and then calculate significance for
+differential expression higher than the given detection limit.
+
 
 # Input data
 
@@ -65,6 +382,8 @@ The ExpressionSet containing this data can be loaded with
 
 ```{r} 
 suppressPackageStartupMessages(require(limmas))
+suppressPackageStartupMessages(library(knitr))
+
 data(gefh1inhib)
 data <- gefh1inhib
 pheno <- gefh1inhib.pheno
@@ -113,7 +432,7 @@ GEFh1.MEKInhib.C	 LFQ.intensity.ALEX_9	 Gefh1Inhib  C
 
 Your pheno file can be directly read into the workspace by calling
 
-```{r, eval=FALSE}
+```{r, eval=FALSE, echo=TRUE}
 require(limmas)
 pheno <- read.pheno("pheno.txt", originalNamesCol="OrigNames", sampleNamesCol="")
 ```
@@ -253,14 +572,13 @@ nrow(data)
 
 # QC before preprocessing
 
-
 ## Complete Rows
 
 Of great interest for the user and for the purpose of MI is the degree of completeness of the data set. The number of missing value-free rows across samples can  be determined by calling *checkCompleteRows(data)*
 
 ```{r, eval=TRUE}
-before.imputation <- checkCompleteRows(data)
-before.imputation
+complete.before.imputation <- checkCompleteRows(data)
+complete.before.imputation
 ```
 
 In contrary, the median missingness across the data set provides a crude overview of missing data in each sample. This can be checked with *checkMissingness(data)*:
@@ -277,7 +595,7 @@ With \Rfunction{hist} we can create a histogram of the non-missing values before
 
 ```{r, eval=TRUE}
 require(affyPLM)
-hist(transformData(data), lwd = 3, main = "Before Normalisation")
+hist(transformData(data), lwd = 2, main = "Before Normalisation")
 ```
 
 ## Boxplots
@@ -286,7 +604,7 @@ hist(transformData(data), lwd = 3, main = "Before Normalisation")
 set before the preprossing.
 
 ```{r, eval=TRUE}
-boxplot(transformData(data), lwd = 3, main = "Before Normalisation")
+boxplot(transformData(data), lwd = 2, main = "Before Normalisation", las = 2)
 ```
 
 # Preprocessing
@@ -342,11 +660,11 @@ data.transformed <- transformData(data.scaled,
 *ExpressionSet* has very useful functionality: e.g. we can plot histograms and boxplots of the normalized data
 
 ```{r, eval=TRUE}
-hist(data.transformed, lwd = 3, main = "Normalised and scaled data") 
+hist(data.transformed, lwd = 2, main = "Normalised and scaled data") 
 ```
 
 ```{r, eval=TRUE}
-boxplot(data.transformed, lwd = 3, main = "Normalised and scaled data")
+boxplot(data.transformed, lwd = 2, main = "Normalised and scaled data", las = 2)
 ```
 
 # QC after preprocessing
@@ -372,29 +690,13 @@ par(mfrow=c(1,1), oma=c(1,1,1,1))
 
 ## Detection limit
 
-Missing values within a MS data set are the result of random or systematic
-detection errors. It is therefore often hard to determine, especially for
-proteins close to the detection limit, whether an entity is truly missing
-or simply not recorded. 
-
-Knowing how likely any protein entity is missing in a given sample is
-therefore a useful insight that aids in the decision of pinpointing a
-threshold for true negative detection. 
-
-Replicates can be used to determine missing values introduced by random errors. 
-Those can be filled up statistically with imputation methods. Then we are
-left with missing values due to the left cencoring caused by the detection limit.
-
-But that is okay, because biologically, we often want to know if the protein 
-is **higher** abundant than the not detected protein. Therefore we estimate
+Therefore we estimate
 the percentage of non-detection with following method.
 
 ```{r, eval=TRUE}
-par(mfrow=c(2,2))
 dev.null <- lapply(levels(pData(data.transformed)[,"groups"]), function (x) { 
    plotNAdensity(data.transformed, group = x, groupCol = "groups")
 })  
-par(mfrow=c(1,1))
 ```
 
 This can be accomplished utilising the function *getMaxProbabilityMissingByChance(data, "groups", 3)*.
@@ -485,8 +787,8 @@ of imputations is set to *m = 10*.
 ```{r, eval=TRUE}
 impResult <- imputeIndependentGroupsWithAmelia(data.transformed,
                                          minTotalPresent = 2,
-                                         groupingCol = "groups")
-
+                                         groupingCol = "groups",
+                                         quiet = T)
 ```
 
 
@@ -572,7 +874,7 @@ class(eset(data.imputed, 1))
 
 - Shows the pheno file
 ```{r, eval=TRUE}
-pData(data.imputed)
+kable(pData(data.imputed))
 ```
 
 - Annotation of the imputed data set
@@ -591,6 +893,10 @@ kable(fData(data.imputed)[1:5,1:5])
 dim(eset(data.imputed, 1))
 ```
 
+- number of rows
+```{r, eval=TRUE}
+nrow(data.imputed)
+```
 
 ## Amelia II - no groups
 
@@ -631,7 +937,7 @@ and the control and has a much higher expression than the control in both
 conditions.
 
 
-## Complete cases
+## Extract complete cases
 
 There are applications where you want to compare only complete feature rows in
 your data set, or if you want to assess how many rows got completely filled 
@@ -643,31 +949,19 @@ data.complete <- completeCases(data.imputed)
 
 and the row count can be checked by
 ```{r, eval=TRUE}
-after.imputation <- nrow(eset(data.complete, 1))
-after.imputation
+complete.after.imputation <- nrow(data.complete)
+complete.after.imputation
 ```
+
+Now let's show the number of features which are now fully filled up by multiple imputation:
+```{r, eval=TRUE}
+complete.after.imputation - complete.before.imputation
+```
+
+Currently, we are improving the statistical power for analysis of these proteins. We are now continuing the analysis for the complete cases only and then will show you how to use the full information of the data set.
 
 # Analysis
 
-For the statistical analysis, \Rpackage{limmas}  makes use of the fantastic
-linear models for microarray (`r Biocpkg("limma")`) package. The 
-analysis of MS data is very similar to microarray analysis, 
-except the problem with the missing values in MS data. We cope 
-with this issue using the multiple imputation approach. `r Biocpkg("limma")`
-is extremely flexible, if you have no experience with `r Biocpkg("limma")`,
-please go and have a look at their extremely well documented vignette. 
-
-\Rpackage{limmas}  uses linear models to do the statistical analysis on the 
-\emph{m} different imputed data sets. Linear models can be used 
-for multifactorial designs which become more popular with the 
-current developments in the MS field. Also, e.g. batch effects 
-can be modeled in in the statistical analysis.
-
-After using linear models on the \emph{m} imputed data sets, the 
-results have to be statistically \emph{pooled}. This is important 
-to adjust for in-between and across data set variablity.
-In \Rpackage{limmas}, we included this functionality for 
-easy pooling of the results.
 
 
 ## The design matrix
@@ -684,19 +978,18 @@ colnames(design) <- c(levels(p$groups), levels(p$batch)[-1])
 ```
 
 
-## Statistics for the complete data set
+## Statistics for complete data after imputation
 
-Now we fit the model for each imputed data set, pool the results, do 
+Now we fit the model for each imputed data set, do the statistics, pool the results, do 
 the significance testing, multiple hypothesis testing correction,
 and display the top results from the first contrast - Gefh1 versus Control -
 in `r Biocpkg("limma")` fashion.
 
 ```{r, eval=TRUE}
-fit <- limmasFit(data.complete, design)
 contrasts <- c("Gefh1 - Control",
                "Gefh1Inhib - Control", 
                "Gefh1Inhib - Gefh1")
-fit <- combineFits(contrastFit(fit, contrasts))
+fit <- combineFits(contrastFit(limmasFit(data.complete, design), contrasts))
 kable(topTableImpute(fit, n=5, coef=1))
 ```
 
@@ -704,9 +997,9 @@ To retrieve the significant results for all different contrasts use:
 
 ```{r, eval=TRUE}
 res.complete <- list()
-res.complete[["gefh1"]]         <- getSignificantFeatures(fit, coef=1, p.value=0.05)
-res.complete[["gefh1inhib"]]    <- getSignificantFeatures(fit, coef=2, p.value=0.05)
-res.complete[["inhib.vs.gefh1"]]<- getSignificantFeatures(fit, coef=3, p.value=0.05)
+res.complete[["gefh1"]]          <- getSignificantFeatures(fit, coef=1, p.value=0.05)
+res.complete[["gefh1inhib"]]     <- getSignificantFeatures(fit, coef=2, p.value=0.05)
+res.complete[["inhib.vs.gefh1"]] <- getSignificantFeatures(fit, coef=3, p.value=0.05)
 
 lapply(res.complete, nrow)
 ```
@@ -745,10 +1038,10 @@ real values.
 This approach is **not** desirable, because although many data points 
 were filled-in with multiple imputation, it implies losing many 
 valid features, totally ignoring valid input data. Similar removal of incomplete
-data is used in many statistical data packages out there. He next section will
+data is used in many statistical data packages out there. The next section will
 explain the analysis of the whole data set using **all** available data.
 
-## Statistics for whole data set
+## Statistics for whole data set after imputation
 
 The analysis is done in two steps. First, we will use all features 
 for building the linear model in `r Biocpkg("limma")` while ignoring missing
@@ -760,6 +1053,8 @@ This is explained easily with an example. As above, we create a linear model
 for all imputed data sets, do hypothesis testing, pooling, and multiple 
 hypothesis correction for all features.
 
+*Note: Because of the missing values,* `r Biocpkg("limma")` *can return 
+Warnings which are expected which can be ignored.*
 
 ```{r, eval=TRUE}
 fit <- suppressWarnings(limmasFit(data.imputed, design))
@@ -774,17 +1069,15 @@ res.full[["inhib.vs.gefh1"]]<- getSignificantFeatures(fit, coef=3, p.value=0.05)
 lapply(res.full, nrow)
 ```
 
-***Note: Because of the missing values, `r Biocpkg("limma")` can return 
-Warnings which are expected which can be ignored.***
 
 Now we want statistically test for 
 
 ```{r, eval=FALSE}
 res.limit[["gefh1"]] <- featuresBelowLimit(data.imputed, "Gefh1", "Control",
                                                     limitLogFC = 1, limitRate  = 0.05)
-res.limit[["gefh1inhib"]]     <- featuresBelowLimit(data.imputed, "Gefh1Inhib", "Control"
+res.limit[["gefh1inhib"]]     <- featuresBelowLimit(data.imputed, "Gefh1Inhib", "Control",
                                                     limitLogFC = 1, limitRate  = 0.05)
-res.limit[["inhib.vs.gefh1"]] <- featuresBelowLimit(data.imputed, "Gefh1Inhib", "Gefh1"
+res.limit[["inhib.vs.gefh1"]] <- featuresBelowLimit(data.imputed, "Gefh1Inhib", "Gefh1",
                                                     limitLogFC = 1, limitRate  = 0.05)
 
 lapply(res.limit, nrow)
@@ -833,12 +1126,12 @@ Now it is time for some remaining stats on the data set.
 
 Amount of complete rows before the imputation
 ```{r, eval=FALSE}
-before.imputation 
+complete.before.imputation 
 ```
 
 Amount of complete rows after the imputation
 ```{r, eval=FALSE}
-after.imputation 
+complete.after.imputation 
 ```
 
 The biggest differences in the gefh1 and the gefh1 inhibitor are detected by
@@ -879,15 +1172,9 @@ Schwarzl T, D'Arcangelo E, Bargary N, Malovits M, Higgins DG, **To be announced*
 
 Please use the Bioconductor Mailing list for bugs or questions.
 
-Thomas Schwarzl \
-schwarzl@embl.de \ 
-European Molecular Biology Laboratory (EMBL) \
-Meyerhofstrasse 1 \
-Heidelberg, Germany 
-
 ## Closing words
 
-This package was developed to analyse (label-free) quantitative MS data, however it can be used to analyse any data set with missing values. It was designed for a flexibel use and its focus is on the biological interpretation of the results. 
+This package  You can also contact schwarzl@embl.de.was developed to analyse (label-free) quantitative MS data, however it can be used to analyse any data set with missing values. It was designed for a flexibel use and its focus is on the biological interpretation of the results. 
 
 We are interested in improving the package, making the analysis of mass spectrometry data sets easy and especially well documented. Please send comments, feedback, and suggestions, or maybe a thanks to schwarzl@embl.de.
 
@@ -896,7 +1183,7 @@ Thank you very much for using **limmas**.
 ## Acknowledgements
 
 Special thanks to Alex von Kriegsheim and David Gomez with providing mass spec knowledge
-and experimental data as well as Ente Tiger for discussion.
+and experimental data as well as Bernd Klaus and Ente Tiger for discussion.
 
 ## R Session Info
 

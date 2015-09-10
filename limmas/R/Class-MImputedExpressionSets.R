@@ -24,6 +24,14 @@ MImputedExpressionSets <- function(data,
 }
 # --------------------------------------------------------
 
+##' @name nrow
+##' @title number of rows
+##' @return numeric. number of rows
+##' @export
+setMethod("nrow", "MImputedExpressionSets", function(object) {
+   nrow(eset(object, 1))
+})
+
 ##' @name getOriginalData
 ##' @title get orginial data
 ##' @description return the original Expression Set wherefrom the imputed values were created

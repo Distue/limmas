@@ -2,12 +2,13 @@ citEntry(entry="article",
          title = "T",
          author = personList( as.person("Thomas Schwarzl"),
                               as.person("Elisa D'Arcangelo"),
+                              as.person("Matthias Malovits"),
                               as.person("Desmond G Higgins")),
-         year = 2014,
+         year = 2015,
          journal = "bioRxiv",
          doi = "",
          url = "",
-         textVersion = 
-         paste("Thomas Schwarzl, ...  (2014):", 
+         textVersion =
+         paste("Thomas Schwarzl, ...  (2015):",
                "TBA",
                 " " ) )
