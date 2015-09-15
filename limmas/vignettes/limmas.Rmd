@@ -270,86 +270,97 @@ to adjust for in-between and across data set variablity.
 Here, we included this functionality for 
 easy pooling and significance testing of the results.
 
-### Pooling 
+### Pooling and significance testing
 
-The pooling is important to adjust for variablity within and between the
-different imputed results. 
+After imputation and fitting of the models for each of the **m** imputations,
+we have **m** different fits of the data 
+(remember imputed values will vary from each version to another). Denote this 
+estimates by $\dot{\hat{\theta}}_{1}, \dot{\hat{\theta}}_{2}, ..., \dot{\hat{\theta}}_{n}$
+and the corresponding variance estimates by $\dot{\hat{\sigma}}_{1}^{2}, \dot{\hat{\sigma}}_{2}^{2}, ..., \dot{\hat{\sigma}}_{n}^{2}$. Those are required for the statistical inference. 
 
-Once m imputed datasets have been generated, the model required for the full
-dataset is fitted to each of the m imputed versions. This results in m model fits 
-and m estimates of the parameter(s) of interest. Denote these estimates by 𝜃!, 𝜃!,…, 𝜃!.
-Each fitted model also provides an estimate of the variance of the corresponding
-𝜃!, 𝑗 = 1,…, 𝑛. For example, the model fitted to dataset 1 will provide an estimate
-𝜃! for the parameter(s) and an estimate 𝜎!
-! for the variance of 𝜃!. This results in
-values for 𝜃!, 𝜃!,…, 𝜃! and corresponding variance estimates 𝜎!
-!, 𝜎!
-!,…, 𝜎!
-! , which
-are required for statistical inference. Once these values have been computed, they
-then need to be combined to get the overall estimates.
-The parameter estimates 𝜃!, 𝜃!,…, 𝜃! are averaged to get the final MI parameter
-estimate:
-𝜃!" =
-1
-𝑛
-𝜃!
-!
-!!!
-However, we cannot simply average the variance estimates as there is now some
-additional uncertainty since imputation has been used. Each imputed dataset will
-be different (i.e. the imputed values will vary from dataset to dataset) and thus the
-parameter estimates from the model fitted to each dataset will also vary. As a result,
-there is variability within each imputed dataset (as quantified by the 𝜎!
-! values), but
-there is also variability between the imputed datasets (i.e. there is additional
-variability introduced due to the imputation). Simply averaging the 𝜎!
-! values only
-provides information about the variability within imputations. Therefore it is
-necessary to quantify and combine both the within and the between sources of
-variability to get the appropriate overall variance value to be used for inference.
-Within imputation variance 𝜎!
-! = !
-! 𝜎!
-! !!
-!!
-Between imputation variance 𝜎!
-! = !
-!!! (𝜃! − !!
-!! 𝜃!")!
+These values have to be combined for the significance test. 
 
+The parameter estimates $\dot{\hat{\theta}}_{1}, \dot{\hat{\theta}}_{2}, ..., \dot{\hat{\theta}}_{n}$ 
+are averaged:
 
-Total variance 𝜎!"
-! = 1 + !
-! 𝜎!
-! + 𝜎!
-!
-Confidence intervals and hypothesis tests can then be performed using 𝜃!" and 𝜎!"
-!
-instead of the individual results from each imputed dataset.
+$\dot{\hat{\theta}}_{MI} = \frac{1}{m} \sum_{j = 1}^{m}\dot{\hat{\theta}}_{j}$
+
+However, we cannot simply average the variance estimates because of the additional uncertainty 
+the imputation has introduced previously. Therefore we have to compute the variablity **within**
+groups in each imputed sample
+
+$\hat{\sigma}_{within}^{2} = \frac{1}{m}\sum_{j=1}^{m} \hat{\sigma}_{j}^{2}$ 
+
+and the variablity **between** imputed samples
+
+$\hat{\sigma}_{between}^{2} = \frac{1}{m-1}\sum_{j=1}^{m}(\dot{\hat{\theta}}_{j} - \dot{\hat{\theta}}_{MI})^{2}$ 
+
+which results in the **total** variablity
+
+$\hat{\sigma}_{MI}^{2} = (1 + \frac{1}{m}) \hat{\sigma}_{between}^{2} + \hat{\sigma}_{within}^{2}$
+
+When calculating confidence intervals and performing hypothesis tests,
+we can now use the parameters $\hat{\sigma}_{MI}^{2}$ and 
+$\dot{\hat{\sigma}}_{MI}^{2}$ instead of the individual results 
+from each imputed version.
 
 
 ## Detection limit 
 
 Missing values within a MS data set are the result of random or systematic
-detection errors. It is therefore often hard to determine, especially for
-proteins close to the detection limit, whether an entity is truly missing
-or simply not recorded. 
+detection errors. In general we have four different cases: (i) detection of 
+the protein, (ii) missing although it would be in the range of detection,
+(iii) the protein is abundant but below the detection limit, (iv) the
+protein is not abundant and therefore cannot be detected.
 
-Knowing how likely any protein entity is missing in a given sample is
-therefore a useful insight that aids in the decision of pinpointing a
-threshold for true negative detection. 
 
-Replicates can be used to determine missing values introduced by random errors. 
-Those can be filled up statistically with imputation methods as described above.
-Then we are left with missing values due to the left cencoring caused by the
-detection limit.
+```{r, eval=TRUE, echo=FALSE} 
+plot(10, type="n", axes=F, xlab="", ylab="")
+lines(x = c(0.65, 0.65), y = c(15, 6.5), lwd = 3)
+lines(x = c(0.65, 1.5), y = c(6.5, 6.5), lwd = 3)
+
+text(x = 0.6, y = 10, labels = "intensity / expression", srt=90, cex = 1.3)
+text(x = 0.7, y = 6, labels = "(i)", cex=1.4)
+text(x = 0.85, y = 6, labels = "(ii)", cex=1.4)
+text(x = 1, y = 6, labels = "(iii)", cex=1.4)
+text(x = 1.15, y = 6, labels = "(iv)", cex=1.4)
+
+points(c(0.85, 1, 1.15), c(12, 9, 6.5), lwd=3, pch=13, cex=2)
+points(c(0.7), c(13), lwd=3, cex=2)
+
+lines(x = c(0.65, 1.15), y = c(10, 10), lty=2)
+
+text(x = 1.3, y = 10, labels = "detection limit", font = 2, cex=1.2)
+
+text(x = 0.85, y = 13, labels = "abundant and detected", font = 3)
+text(x = 0.99, y = 12, labels = "abundant and missing", font = 3)
+text(x = 0.99, y = 11.5, labels = "(above detection limit)", font = 3)
+text(x = 1.15, y = 9, labels = "abundant and missing", font = 3)
+text(x = 1.15, y = 8.5, labels = "(below the detection limit)", font = 3)
+text(x = 1.25, y = 6.9, labels = "not abundant", font = 3)
+
+```
+
+It is therefore often hard to determine, especially for proteins close to the detection limit,
+whether an entity is truly missing or simply not recorded. Knowing how likely any protein 
+entity is missing in a given sample is therefore a useful insight that aids
+in the decision of pinpointing a threshold for true negative detection. 
 
 In biological, we often want to know if the protein is **higher** abundant 
 in one group where it could not be detected. In this package we provide a 
 method to first estimate a detection limit and then calculate significance for
 differential expression higher than the given detection limit.
 
+Replicates can be used to determine missing values introduced by random errors. 
+Those can be filled up statistically with imputation methods as described above.
+We effectively deal with case (ii) by using mulitple imputation. Then we are left 
+with missing values due to the left cencoring caused by the detection limit.
+
+We can estimate a detection level, where we assume that if a protein is
+detected in one sample and not in the other, then it is very likely to be
+below the detection limit, either lowly abundant (iii) or not abundant (iv).
+Using statistical tests we can test if the protein is significantly higher
+than the detection limit and therefore represents a good candidate.
 
 # Input data
 
@@ -604,7 +615,9 @@ hist(transformData(data), lwd = 2, main = "Before Normalisation")
 set before the preprossing.
 
 ```{r, eval=TRUE}
+par(oma=c(4,1,1,1))
 boxplot(transformData(data), lwd = 2, main = "Before Normalisation", las = 2)
+par(oma=c(1,1,1,1))
 ```
 
 # Preprocessing
@@ -664,7 +677,9 @@ hist(data.transformed, lwd = 2, main = "Normalised and scaled data")
 ```
 
 ```{r, eval=TRUE}
+par(oma=c(4,1,1,1))
 boxplot(data.transformed, lwd = 2, main = "Normalised and scaled data", las = 2)
+par(oma=c(1,1,1,1))
 ```
 
 # QC after preprocessing
@@ -675,7 +690,7 @@ Normality is checked using normal quantile-quantile (Q-Q) plots. A 45 degree dia
 right would mean a perfectly normal distributed sample as shown in Figure below.
 Alternatively, a Shapiro-Wilk test could be performed.
 
-```{r, eval=TRUE}
+```{r, eval=TRUE,fig.width=10, fig.height=10}
 par(mfrow=c(3,3), oma=c(3,3,3,3))
 for(i in 1:9) {
    qqnorm(exprs(data.transformed)[,i],
@@ -693,10 +708,12 @@ par(mfrow=c(1,1), oma=c(1,1,1,1))
 Therefore we estimate
 the percentage of non-detection with following method.
 
-```{r, eval=TRUE}
+```{r, eval=TRUE,fig.width=10, fig.height=10}
+par(mfrow=c(2,2), oma=c(3,3,3,3))
 dev.null <- lapply(levels(pData(data.transformed)[,"groups"]), function (x) { 
    plotNAdensity(data.transformed, group = x, groupCol = "groups")
 })  
+par(mfrow=c(1,1), oma=c(1,1,1,1))
 ```
 
 This can be accomplished utilising the function *getMaxProbabilityMissingByChance(data, "groups", 3)*.
@@ -716,7 +733,14 @@ This plot shows amount of missing values versus the median expression
 plotMedianVsNAs(data.transformed, "Gefh1", groupCol = "groups")
 ```
 
-shows the standard deviation veersus the median expression
+We can use the plotMA function from limma to create MA plots, plowwint the 
+average log-expression against the expression log-ratio.
+
+```{r, eval=TRUE}
+limma::plotMA(data.transformed[,c("Control.A", "Control.B", "Control.C")])
+```
+
+Alternatively we can show the standard deviation versus the median expression
 
 ```{r, eval=TRUE}
 plotMedianVsSD(data.transformed, "Gefh1", groupCol = "groups")
@@ -732,6 +756,9 @@ plotNAsVsSD(data.transformed, "Gefh1", groupCol = "groups")
 Now we estimate the detection limit for all groups under the assumption
 that these samples were run on the same machine.
 
+```{r, eval=TRUE}
+plotMaxNA(data.transformed, "Gefh1", groupCol = "groups")
+```
 
 %
 %
@@ -928,7 +955,9 @@ The easiest way to quickly assess the levels of the protein is to plot the
 protein intensities in the MS data.
 
 ```{r, eval=TRUE}
-plotExpression(data.imputed, "Q92974")
+par(oma=c(6,1,1,1))
+plotExpression(data.imputed, "Q92974", col=c("black", "red", "blue"))
+par(oma=c(1,1,1,1))
 ```
 
 
@@ -962,13 +991,19 @@ Currently, we are improving the statistical power for analysis of these proteins
 
 # Analysis
 
+After the multiple imputation step
+we have complete rows without any missing values and
+some rows with no data in certain groups. Therefore we can analysis 
+
+1. only complete rows after multiple imputation or
+2. the whole dataset after multiple imputation
 
 
 ## The design matrix
 
-A design matrix has to be constructed for fitting the model. This
-basic concept is well documented in the `r Biocpkg("limma")` vignette.
-Here an example is giving where the model is fitted on group and
+For the analysis we need the imputed data and a design matrix for fitting 
+the model. This basic concept is well documented in the `r Biocpkg("limma")`
+vignette. Here an example is giving where the model is fitted on group and
 batches.
 
 ```{r, eval=TRUE}
@@ -978,7 +1013,7 @@ colnames(design) <- c(levels(p$groups), levels(p$batch)[-1])
 ```
 
 
-## Statistics for complete data after imputation
+## Analysis of only complete rows after imputation
 
 Now we fit the model for each imputed data set, do the statistics, pool the results, do 
 the significance testing, multiple hypothesis testing correction,
@@ -989,37 +1024,28 @@ in `r Biocpkg("limma")` fashion.
 contrasts <- c("Gefh1 - Control",
                "Gefh1Inhib - Control", 
                "Gefh1Inhib - Gefh1")
-fit <- combineFits(contrastFit(limmasFit(data.complete, design), contrasts))
+contrastFit <- contrastFit(limmasFit(data.complete, design), contrasts)
+fit <- combineFits(contrastFit)
 kable(topTableImpute(fit, n=5, coef=1))
 ```
 
-To retrieve the significant results for all different contrasts use: 
+Since we have control samples, we want to filter the results for significantly
+higher expression ( > 0.5 logFC) in samples versus controls. To retrieve the
+significant results for all different contrasts use:
 
 ```{r, eval=TRUE}
 res.complete <- list()
-res.complete[["gefh1"]]          <- getSignificantFeatures(fit, coef=1, p.value=0.05)
-res.complete[["gefh1inhib"]]     <- getSignificantFeatures(fit, coef=2, p.value=0.05)
-res.complete[["inhib.vs.gefh1"]] <- getSignificantFeatures(fit, coef=3, p.value=0.05)
+res.complete[["gefh1"]]          <- getSignificantFeatures(fit, coef=1, adj.P.value=0.05, logFCcutoff=function(x) x > 0.5)
+res.complete[["gefh1inhib"]]     <- getSignificantFeatures(fit, coef=2, adj.P.value=0.05, logFCcutoff=function(x) x > 0.5)
+res.complete[["inhib.vs.gefh1"]] <- getSignificantFeatures(fit, coef=3, adj.P.value=0.05, logFCcutoff=function(x) x > 0.5 || x < -0.5)
 
 lapply(res.complete, nrow)
 ```
 
-Since we have control samples, we want to filter, the results for significantly
-higher expression and \textgreater 0.5 logFC in samples versus controls.
-
-```{r, eval=TRUE}
-res.complete.filter <- unique(unlist(lapply(c("gefh1", "gefh1inhib"), function(x) {
-   rownames(res.complete[[x]][res.complete[[x]][,"logFC"] > 0.5,])
-})))
-
-sig.complete <- res.complete[["inhib.vs.gefh1"]][
-                       rownames(res.complete[["inhib.vs.gefh1"]]) 
-                                                    %in% res.complete.filter,]
-nrow(sig.complete)
-```
+The top results
 
 ```{r, eval=TRUE} 
-kable(head(sig.complete))
+kable(head(res.complete[["inhib.vs.gefh1"]][ rownames(res.complete[["inhib.vs.gefh1"]]) %in%  rownames(res.complete[["gefh1"]]) || rownames(res.complete[["inhib.vs.gefh1"]]) %in%  rownames(res.complete[["gefh1inhib"]]),]))
 ```
 
 Four proteins are significantly expressed between the two conditions
@@ -1027,7 +1053,9 @@ as well as compared to the control in the complete data set. We plot
 the top result:
 
 ```{r, eval=TRUE}
-plotExpression(data.complete, as.numeric(rownames(sig.complete[1,])))
+par(oma=c(4,1,1,1))
+plotExpression(data.complete, as.numeric(rownames(sig.complete[1,])), col=c("black", "red", "blue"))
+par(oma=c(1,1,1,1))
 ```
 
 When a sample contains multiple data points, this means it was imputed.
@@ -1073,6 +1101,7 @@ lapply(res.full, nrow)
 Now we want statistically test for 
 
 ```{r, eval=FALSE}
+res.limit <- list()
 res.limit[["gefh1"]] <- featuresBelowLimit(data.imputed, "Gefh1", "Control",
                                                     limitLogFC = 1, limitRate  = 0.05)
 res.limit[["gefh1inhib"]]     <- featuresBelowLimit(data.imputed, "Gefh1Inhib", "Control",
@@ -1112,8 +1141,9 @@ with intensities of zero are under the detection limit and not necessarily
 zero!}
 
 ```{r, eval=FALSE}
-par(oma=c(4,4,4,4))
-plotExpression(data.imputed, as.numeric(rownames(sig.limit[1,])))
+par(oma=c(4,1,1,1))
+plotExpression(data.imputed, as.numeric(rownames(sig.limit[1,])), col=c("black", "red", "blue"))
+par(oma=c(1,1,1,1))
 ```
 
 To sum this up, if the features have values for each sample (are complete), 
@@ -1163,18 +1193,18 @@ If you use this package please cite
 
 ```
 TO BE ANNOUNCED
-```
+
 LIMMAS: an R package for analyzing differentially expressed proteins in quantitative label-free mass spectrometry data with multiple imputation and linear models  \ 
 Schwarzl T, D'Arcangelo E, Bargary N, Malovits M, Higgins DG, **To be announced** 2015 
-
+```
 
 ## Contact 
 
-Please use the Bioconductor Mailing list for bugs or questions.
+Please use the Bioconductor Mailing list for bugs or questions. You can also contact schwarzl@embl.de.
 
 ## Closing words
 
-This package  You can also contact schwarzl@embl.de.was developed to analyse (label-free) quantitative MS data, however it can be used to analyse any data set with missing values. It was designed for a flexibel use and its focus is on the biological interpretation of the results. 
+This package was developed to analyse (label-free) quantitative MS data, however it can be used to analyse any data set with missing values. It was designed for a flexibel use and its focus is on the biological interpretation of the results. 
 
 We are interested in improving the package, making the analysis of mass spectrometry data sets easy and especially well documented. Please send comments, feedback, and suggestions, or maybe a thanks to schwarzl@embl.de.
 

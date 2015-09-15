@@ -161,7 +161,7 @@ setMethod("combineFits", "MImputedMArrayLM", function(fit) {
       evar <- var(do.call("rbind", coef))
 
       # Calculate the total variance for the imputed data.
-      variance.tot <- vbar+evar*(1/m+1)
+      variance.tot <- vbar + evar*(1/m+1)
 
       # Calculate the df for the imputed data.
       r <- (1 + 1/m)*evar/vbar

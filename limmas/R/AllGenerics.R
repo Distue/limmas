@@ -189,23 +189,27 @@ setGeneric("scaleData", function(data, scalefactor, ...) standardGeneric("scaleD
 ##' @export
 setGeneric("getGroupData", function(data, group, ...) standardGeneric("getGroupData"))
 
-##' @rdname plotMedianVsNAs
+##' @rdname plotsNA
 ##' @export
 setGeneric("plotMedianVsNAs", function(data, group, ...) standardGeneric("plotMedianVsNAs"))
 
-##' @rdname plotMedianVsSD
+##' @rdname plotsNA
 ##' @export
 setGeneric("plotMedianVsSD", function(data, group, ...) standardGeneric("plotMedianVsSD"))
 
-##' @rdname plotNAsVsSD
+##' @rdname plotsNA
 ##' @export
 setGeneric("plotNAsVsSD", function(data, group, ...) standardGeneric("plotNAsVsSD"))
 
-##' @rdname fillNAs
+##' @rdname plotsNA
 ##' @export
 setGeneric("plotNAdensity", function(data, group, ...) standardGeneric("plotNAdensity"))
 
-##' @rdname fillNAs
+##' @rdname plotChangeMissing
+##' @export
+setGeneric("plotChangeMissing", function(data, group, ...) standardGeneric("plotChangeMissing"))
+
+##' @rdname imputeIndependentGroupsWithAmelia
 ##' @export
 setGeneric("imputeIndependentGroupsWithAmelia", function(data.input, ...) standardGeneric("imputeIndependentGroupsWithAmelia"))
 

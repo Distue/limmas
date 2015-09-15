@@ -125,22 +125,27 @@ setMethod("topTableImpute", "CombinedMArrayLM", function(fit,
 ##' @param p.value cutoff value for adjust p-values. Only proteins with lower p-values are listed
 ##' @param featurelist data.frame or character vector containing protein information, e.g. protein names
 ##' @param number maximum number of proteins to list
+##' @param logFCcutoff function which defines the log fold change cutoff. NA if no cutoff is applied
+##' @param adj.P.value adjusted p-value cutoff. NA is none
 ##' @return top result table
 ##' @export
 setMethod("getSignificantFeatures", "CombinedMArrayLM", function(fit,
-                                                                 p.value      = 0.05,
-                                                                 onlyPositive = F,
-                                                                 onlyNegative = F,
-                                                                 logFCcutoff  = 0,
+                                                                 p.value      = 1,
+                                                                 adj.P.value  = 0.05,
+                                                                 logFCcutoff  = NA,
                                                                  ...) {
    tt <- topTableImpute(fit, number=nrow(fit@coefficients), p.value=p.value, ...)
 
-   if (onlyPositive) {
-      tt <- tt[tt[,"logFC"] > logFCcutoff, ]
+   if(is.function(logFCcutoff)) {
+         tt <- tt[logFCcutoff(tt[,"logFC"]), ]
    }
 
-   if (onlyNegative) {
-      tt <- tt[tt[,"logFC"] < (-1 * logFCcutoff), ]
+   if(!is.na(adj.P.value)) {
+      if(is.numeric(adj.P.value)) {
+         tt <- tt[tt[,"adj.P.value"] < adj.P.value,]
+      } else {
+         stop("adj.P.value has to be numeric")
+      }
    }
 
    return(tt)

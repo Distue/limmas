@@ -8,6 +8,6 @@ Author: Thomas Schwarzl <schwarzl@embl.de>, with contributions of Elisa D'Arcang
 Version: 0.4
 Depends: R (>= 2.11.0), Biobase, limma
 Suggests: testthat, BiocStyle, BiocParallel, knitr
-Imports: affyPLM, Amelia
+Imports: affyPLM, Amelia, ggplot2
 License: LGPL (>= 3)
 Packaged: 2013-04-18 14:43:00 UTC; tom

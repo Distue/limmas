@@ -7,9 +7,10 @@
 ##' @name filterRows
 ##' @title filter rows
 ##' @description Functions for filtering rows while maintaining data integrety
-##' @param object input ExpressionSet
-##' @param filter vector for filtering
+##' @param object ExpressionSet. input
+##' @param filter vector. vector for filtering
 ##' @importClassesFrom Biobase ExpressionSet
+##' @return filtered ExpressionSet
 ##' @export
 setMethod("filterRows", c(object="ExpressionSet", filter="logical"), function(object, filter) {
    object <- object[filter,]
@@ -21,8 +22,8 @@ setMethod("filterRows", c(object="ExpressionSet", filter="logical"), function(ob
 ##' @name filterCols
 ##' @title filter columns
 ##' @description Functions for filtering columns while maintaining data integrety
-##' @param object input ExpressionSet
-##' @param filter vector for filtering
+##' @param object ExpressionSet. input
+##' @param filter vector. vector for filtering
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @return filtered ExpressionSet
 ##' @export
@@ -35,7 +36,7 @@ setMethod("filterCols", c(object="ExpressionSet", filter="logical"), function(ob
 ##' @title check missingness of samples in the data set
 ##' @description function for calculating percentage of missing values (NAs) per sample
 ##' @param minIntensity minimal intensity cutoff
-##' @return  percentage of missingness
+##' @return percentage of missingness
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @export
 setMethod("checkMissingness", "ExpressionSet", function(data, minIntensity = 0) {
@@ -98,8 +99,8 @@ setMethod("peptideFilter", "ExpressionSet", function (data,
                                                       peptideCutoff = 1,
                                                       peptideColumns = c("Peptides"),
                                                       method = c(any, all)) {
-   if(!class(data)[1] == "ExpressionSet") {
-      stop("data is not an object of class ExpressionSet")
+   if(!extends(class(data), "ExpressionSet")) {
+      stop("'data' is not an object of class ExpressionSet or derived from an ExpressionSet")
    }
 
    filter <- NULL
@@ -107,7 +108,9 @@ setMethod("peptideFilter", "ExpressionSet", function (data,
    if(length(peptideColumns) == 1) {
       filter <- fData(data)[,peptideColumns] > peptideCutoff
    } else {
-      filter <- unlist(apply(fData(data)[,peptideColumns], 1, function(x) { method(x) > peptideCutoff }))
+      filter <- unlist(apply(fData(data)[,peptideColumns], 1, function(x) {
+                        method(x) > peptideCutoff
+                }))
    }
 
    return(filterRows(data, filter))
@@ -116,13 +119,25 @@ setMethod("peptideFilter", "ExpressionSet", function (data,
 
 ##' @name reverseFilter
 ##' @title reverse filter
-##' @description  removes positive hits from reverse databases
+##' @description removes positive hits from reverse databases
 ##' @param symbol filter for symbol
 ##' @param reverseColumn name of column containing the reverse column
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @return filtered ExpressionSet
 ##' @export
 setMethod("reverseFilter", "ExpressionSet", function (data, symbol = "+", reverseColumn="Reverse") {
+   if(!extends(class(data), "ExpressionSet")) {
+      stop("'data' is not an object of class ExpressionSet or derived from an ExpressionSet")
+   }
+
+   if(!is.character(symbol)) {
+      stop("'symbol' has to be a character symbol")
+   }
+
+   if(!is.character(reverseColumn)) {
+      stop("'reverseColumn' has to be a character string")
+   }
+
    rCol <- fData(data)[, reverseColumn]
    rCol[rCol == symbol] <- NA
    return(filterRows(data, !is.na(rCol)))
@@ -137,6 +152,18 @@ setMethod("reverseFilter", "ExpressionSet", function (data, symbol = "+", revers
 ##' @return filtered ExpressionSet
 ##' @export
 setMethod("contaminantFilter", "ExpressionSet", function(data, symbol = "+", contaminantColumn="Contaminant") {
+   if(!extends(class(data), "ExpressionSet")) {
+      stop("'data' is not an object of class ExpressionSet or derived from an ExpressionSet")
+   }
+
+   if(!is.character(symbol)) {
+      stop("'symbol' has to be a character symbol")
+   }
+
+   if(!is.character(contaminantColumn)) {
+      stop("'contaminantColumn' has to be a character string")
+   }
+
    cCol <- fData(data)[, contaminantColumn]
    cCol[cCol == symbol] <- NA
 
@@ -159,15 +186,15 @@ setMethod("completeCases", "ExpressionSet", function(object) {
 
 ##' @name normalizeData
 ##' @title normalized data
-##' @description TODO
-##' @param minIntensity minimal intensity for NA cutoff
-##' @param FUN function for normalization
+##' @description Function to normalize a dataset with a missing values minimum cutoff
+##' @param minIntensity minimal intensity for NA cutoff, all values <= minIntensity are set to NA
+##' @param FUN function for normalization of data
 ##' @import affyPLM
 ##' @return normalized ExpressionSet
 ##' @export
 setMethod("normalizeData", "ExpressionSet", function(data, minIntensity=0, FUN=normalize.ExpressionSet.quantiles, ...) {
    if(!is.function(FUN)) {
-      stop("fun has to be a function")
+      stop("'FUN' has to be a function")
    }
 
    exprs(data)[exprs(data) <= minIntensity] <- NA
@@ -180,7 +207,7 @@ setMethod("normalizeData", "ExpressionSet", function(data, minIntensity=0, FUN=n
 
 ##' @name transformData
 ##' @title transforms data
-##' @description transformation
+##' @description Transforms transformation
 ##' @param FUN function for transformation
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @return transformed ExpressionSet
@@ -204,16 +231,18 @@ setMethod("transformData", "ExpressionSet",
 
 ##' @name scaleData
 ##' @title scale data
-##' @description TODO
-##' @param scalefactor factor for scaling
-##' @param FUN function for scaling
+##' @description This function scales samples X by given scalefactor: $\fraction{X}{scalefactor}$
+##' @param scalefactor numeric. factor for scaling
+##' @param FUN function. scaling operation
 ##' @importClassesFrom Biobase ExpressionSet
-##' @return scaled ExpressionSet
+##' @return ExpressionSet. Scaled data
 ##' @export
 setMethod("scaleData", "ExpressionSet",
           function(data, scalefactor = 1000,
                    FUN = function(x) { exprs(x) <- exprs(x) / scalefactor; return(x) }) {
-
+             if(!is.numeric(scalefactor)) {
+                stop("scalefactor has to be numeric")
+             }
              if(!is.function(FUN)) {
                 stop("fun has to be a function")
              }
@@ -226,15 +255,39 @@ setMethod("scaleData", "ExpressionSet",
 # Detection limit
 # -----------------------------------------------------------
 
-
 ##' @name getGroupData
 ##' @title get group data
-##' @param group character string which specifies the groupß
-##' @description TODO
+##' @param group character string which specifies the group
+##' @param groupCol name of the column specifying the groups in the pData slot of the ExpressionSet
+##' @description This function calculates a number of statistics for NA relationship in the data
 ##' @importClassesFrom Biobase ExpressionSet
+##' @return a list containing following elements:
+##' groupData: expression data for the group
+##' stats: data frame containing columns
+##'        medianExpression: vector of median expression for the group
+##'        sdExpression: standard deviation for expression
+##'        naCount for expression
+##' na.max: maximal NAs in sample
+##' na.min: minimal NAs in samkple
+##' na.vec: NA vector with all NA counts
+##' na.count: NA count
+##' i.max: max median expression
+##' i.min: min median expression
 ##' @export
 setMethod("getGroupData", "ExpressionSet",
       function(data, group, groupCol="groups", ...) {
+         if(!is.character(groupCol)) {
+            stop("'groupCol' is not a character string")
+         }
+
+         if(!groupCol %in% colnames(pData(data))) {
+            stop(paste0("'groupCol' is set to ", groupCol, " which is not a column name in the pData slot of the ExpressionSet given."))
+         }
+
+         if(!group %in% pData(data)[,groupCol]) {
+            stop(paste0("'group' is set to ", group, " which is not an element the column ", groupCol, " in the pData slot of the ExpressionSet given." ))
+         }
+
          groupData <- exprs(data.transformed)[,rownames(pData(data)[pData(data.transformed)[,groupCol] == group,])]
          groupData <- groupData[!apply(groupData, 1, function(y) { all(is.na(y)) }),]
          medianExpression <- apply(groupData, 1, function(y) { median(y, na.rm = T)})
@@ -243,7 +296,13 @@ setMethod("getGroupData", "ExpressionSet",
          groupData <- groupData[order,]
          medianExpression <- medianExpression[order]
          sdExpression <- sdExpression[order]
+
          naCount   <- apply(groupData, 1, function(y) { sum(is.na(y)) })
+
+         stats     <- data.frame(medianExpression = medianExpression,
+                                 sdExpression     = sdExpression,
+                                 naCount          = naCount)
+
          na.max    <- max(naCount)
          na.min    <- 0
          na.vec    <- na.min:na.max
@@ -253,9 +312,7 @@ setMethod("getGroupData", "ExpressionSet",
 
          ret <- list()
          ret[["groupData"]]        <- groupData
-         ret[["medianExpression"]] <- medianExpression
-         ret[["sdExpression"]]     <- sdExpression
-         ret[["naCount"]]          <- naCount
+         ret[["stats"]]            <- stats
          ret[["na.max"]]           <- na.max
          ret[["na.min"]]           <- na.min
          ret[["na.vec"]]           <- na.vec
@@ -265,18 +322,24 @@ setMethod("getGroupData", "ExpressionSet",
          return(ret)
 })
 
-##' @name plotMedianVsNAs
-##' @title plot median vs NAs
-##' @description plot the NA counts
+##' @name plotsNA
+##' @title plots for ExpressionSets with missing values
 ##' @param group group
 ##' @param groupCol group column
+##' @param ... additional graphical parameters
+##' @description
+##' plotMedianVsNAs: plot the NA counts
+##' plotMedianVsSD: Plots the relationship of median expression versus standard deviation
+##' plotNAsVsSD: Plots the missing value counts versus the standard deviation
+##' plotNAdensity: Plot the missing value (NA) density
+##'
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @export
 setMethod("plotMedianVsNAs", "ExpressionSet",
    function(data, group, groupCol="groups", ...) {
       g <- getGroupData(data.transformed, group=group, groupCol=groupCol)
 
-      boxplot(g[["medianExpression"]]~g[["naCount"]],
+      boxplot(g[["stats"]][,"medianExpression"]~g[["stats"]][,"naCount"],
             main = paste(group, " (", ncol(g[["groupData"]]), " samples)", sep=""),
             xlab = "NA count",
             ylab = "median expression",
@@ -285,53 +348,50 @@ setMethod("plotMedianVsNAs", "ExpressionSet",
    })
 
 
-##' @name plotMedianVsSD
-##' @title plot median vs SD
-##' @description TODO
-##' @param group group
-##' @param groupCol group column
+##' @rdname plotsNA
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @export
 setMethod("plotMedianVsSD", "ExpressionSet",
           function(data, group, groupCol="groups", ...) {
              g <- getGroupData(data.transformed, group=group, groupCol=groupCol)
 
-             plot(g[["medianExpression"]], g[["sdExpression"]],
+             plot(g[["stats"]][,"medianExpression"], g[["stats"]][,"sdExpression"],
                   main = paste(group, " (", ncol(g[["groupData"]]), " samples)", sep=""),
                   ylab = "standard deviation",
                   xlab = "median expression",
                   type = "p",
-                  cex  = 0.2)
+                  cex  = 0.2,
+                  ...)
           })
 
-##' @name plotNAsVsSD
-##' @title plot NAs versus standard deviation
-##' @description TODO
+##' @rdname plotsNA
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @export
 setMethod("plotNAsVsSD", "ExpressionSet",
           function(data, group, groupCol="groups", ...) {
              g <- getGroupData(data.transformed, group=group, groupCol=groupCol)
 
-            boxplot(g[["sdExpression"]]~g[["naCount"]],
+            boxplot(g[["stats"]][,"sdExpression"]~g[["stats"]][,"naCount"],
                     main = paste(group, " (", ncol(g[["groupData"]]), " samples)", sep=""),
                     ylab = "standard deviation",
                     xlab = "NA count",
                     type = "p",
-                    cex  = 0.2)
+                    cex  = 0.2,
+                    ...)
           })
 
 
-##' @name plotNAdensity
-##' @title plot NA density
-##' @description TODO
+##' @rdname plotsNA
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @export
 setMethod("plotNAdensity", "ExpressionSet", function(data, group, groupCol="groups", ...) {
    # get preprocessed data for the groups
    g <- getGroupData(data, group=group, groupCol=groupCol)
    # create and store the density plots for printing together
-   plots <- lapply(g[["na.vec"]], function(z) { density(g[["medianExpression"]][g[["naCount"]] == as.numeric(z)]) })
+   plots <- lapply(g[["na.vec"]], function(z) {
+      density(g[["stats"]][,"medianExpression"][g[["stats"]][,"naCount"] == as.numeric(z)])
+   })
+
    # determine boundries of the plot
    d.max <- max(unlist(lapply(plots, function(z) { max(z$y) })))
    # and the colors
@@ -340,36 +400,55 @@ setMethod("plotNAdensity", "ExpressionSet", function(data, group, groupCol="grou
    # plot all together
    plot(plots[[1]], col=colvec[1], lwd=3,
         main = paste("# NAs for group ", group, sep=""),
-        xlim = c(g[["i.min"]], g[["i.max"]]), ylim = c(0, d.max))
+        xlim = c(g[["i.min"]], g[["i.max"]]), ylim = c(0, d.max), ...)
    zz <- lapply(1:(g[["na.max"]]), function(z) { lines(plots[[z+1]], col=colvec[z + 1], lwd=3) })
    legend("topright", "# NAs", paste(g[["na.vec"]], " (", g[["na.count"]], " features)", sep=""), fill = colvec,  )
 })
 
 
+##' @name plotChangeMissing
+##' @title plots chance of missingness
+##' @param group group
+##' @param groupCol group column
+##' @param windowSize size of window
+##' @param stepSize size of the steps to go
+##' @description Plot the chance of a value being missing for a certain median expression
+##' @return ggplot2 plot
+##' @importClassesFrom Biobase ExpressionSet
+##' @export
+setMethod("plotChangeMissing", "ExpressionSet", function(data, group, groupCol="groups", windowSize = 0.3, stepSize = 0.5) {
+   g <- getGroupData(data.transformed, group=group, groupCol=groupCol)
 
-# g <- getGroupData(data.transformed, group=group, groupCol=groupCol)
-#
-# names(g)
-#
-# windowSize = 0.3
-# steps = seq(g[["i.min"]], g[["i.max"]], 0.5)
-# perc  = unlist(lapply(steps, function(i) {
-#    j <- i + windowSize
-#
-#    window <- g[["medianExpression"]] >= i & g[["medianExpression"]] <= j
-#
-#    g[["medianExpression"]][ window ]
-#    ret <- sum(g[["naCount"]][ window ]) / (g[["na.max"]] * sum(window))
-#    if(is.nan(ret)) {
-#       return(0)
-#    } else {
-#       return(ret)
-#    }
-# }))
-#
-# plot(steps, perc, type="b")
-#
-# plot(cumsum(perc))
+   windowSize = 0.5
+   stepSize = 0.1
+
+   steps = seq(g[["i.min"]], g[["i.max"]], stepSize)
+   perc  = unlist(lapply(steps, function(i) {
+      j <- i + windowSize
+
+      window <- g[["stats"]][,"medianExpression"] >= i & g[["stats"]][,"medianExpression"] <= j
+
+      ret <- sum(g[["stats"]][,"naCount"][ window ]) / (g[["na.max"]] * sum(window))
+      if(is.nan(ret)) {
+         return(0)
+      } else {
+         return(ret)
+      }
+   }))
+
+   X <- data.frame(steps, perc)
+
+
+   ggplot(X, aes(x = steps, y=perc)) +
+      geom_point(size = I(3)) +
+      geom_line() +
+      theme_minimal() +
+      theme(text = element_text(size=20)) +
+      xlim(c(g[["i.min"]], g[["i.max"]])) +
+      xlab("median expression") +
+      ylab("change of missingness") +
+      ggtitle(paste0("Chance of missingness, window size: ", windowSize))
+})
 
 # -----------------------------------------------------------
 # imputation
