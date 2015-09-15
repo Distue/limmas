@@ -319,6 +319,7 @@ setMethod("getGroupData", "ExpressionSet",
          ret[["na.count"]]         <- na.count
          ret[["i.max"]]            <- i.max
          ret[["i.min"]]            <- i.min
+         ret[["sample.count"]]     <- ncol(groupData)
          return(ret)
 })
 
@@ -406,17 +407,19 @@ setMethod("plotNAdensity", "ExpressionSet", function(data, group, groupCol="grou
 })
 
 
-##' @name plotChangeMissing
-##' @title plots chance of missingness
+
+##' @name getGroupWindowData
+##' @title get group window data
 ##' @param group group
 ##' @param groupCol group column
-##' @param windowSize size of window
-##' @param stepSize size of the steps to go
-##' @description Plot the chance of a value being missing for a certain median expression
-##' @return ggplot2 plot
+##' @return data frame with columns
+##' steps: median expression steps
+##' perc: percentage calculated missingness
+##' maxperc: maximum percentage of missingness
+##' notdetected: chance of not detected given the number of replicates
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @export
-setMethod("plotChangeMissing", "ExpressionSet", function(data, group, groupCol="groups", windowSize = 0.3, stepSize = 0.5) {
+setMethod("getGroupWindowData", "ExpressionSet", function(data, group, groupCol="groups", ...) {
    g <- getGroupData(data.transformed, group=group, groupCol=groupCol)
 
    windowSize = 0.5
@@ -436,18 +439,80 @@ setMethod("plotChangeMissing", "ExpressionSet", function(data, group, groupCol="
       }
    }))
 
-   X <- data.frame(steps, perc)
+   maxperc <- unlist(lapply(1:length(perc), function(i) {
+      max(perc[i:length(perc)])
+   }))
+
+   notdetected <- maxperc^ncol(g$groupData)
+
+   return(data.frame(steps, perc, maxperc, notdetected))
+})
 
 
-   ggplot(X, aes(x = steps, y=perc)) +
-      geom_point(size = I(3)) +
-      geom_line() +
+##' @name plotWindow
+##' @title plots chance of missingness
+##' @param group group
+##' @param groupCol group column
+##' @param windowSize size of window
+##' @param stepSize size of the steps to go
+##' @description Plot the chance of a value being missing for a certain median expression
+##' @return ggplot2 plot
+##' @importClassesFrom Biobase ExpressionSet
+##' @import ggplot2
+##' @export
+setMethod("plotChanceMissing", "ExpressionSet", function(data, group, groupCol="groups", windowSize = 0.3, stepSize = 0.5) {
+   X <- getGroupWindowData(data = data, group = group, groupCol = groupCol, windowSize = windowSize, stepSize = stepSize)
+
+   ticks <- function(n) {
+      function(limits) {
+         pretty(limits, n)
+      }
+   }
+
+   ggplot(X) +
+      geom_point( aes(x = steps, y=perc), size = I(3)) +
+      geom_line( aes(x = steps, y=perc)) +
       theme_minimal() +
-      theme(text = element_text(size=20)) +
+      theme(text = element_text(size=I(20))) +
       xlim(c(g[["i.min"]], g[["i.max"]])) +
       xlab("median expression") +
-      ylab("change of missingness") +
-      ggtitle(paste0("Chance of missingness, window size: ", windowSize))
+      ylab("chance of missingness") +
+      ggtitle(paste0("Chance of missingness, window size: ", windowSize)) +
+      scale_x_continuous(breaks = round(seq(min(X$steps), max(X$steps), by = 1),1)) +
+      scale_y_continuous(breaks = round(seq(min(X$perc), max(X$perc), by = 0.1),1)) +
+      geom_line( aes(x = steps, y=maxperc), col="red")
+})
+
+##' @rdname plotWindow
+##' @import ggplot2
+##' @export
+setMethod("plotChanceNotDetected", "ExpressionSet",
+          function(data,
+                   group,
+                   groupCol = "groups",
+                   windowSize = 0.3,
+                   stepSize = 0.1,
+                   line = 0.05) {
+   X <- getGroupWindowData(data = data, group = group, groupCol = groupCol, windowSize = windowSize, stepSize = stepSize)
+
+   ticks <- function(n) {
+      function(limits) {
+         pretty(limits, n)
+      }
+   }
+
+   Y <- X[X[,"notdetected"] < 0.2 & X[,"notdetected"] > 0.001, ]
+
+   ggplot(Y) +
+      geom_point( aes(x = steps, y=maxperc^ncol(g$groupData)), size = I(3)) +
+      geom_line( aes(x = steps, y=maxperc^ncol(g$groupData))) +
+      theme_minimal() +
+      theme(text = element_text(size=I(20))) +
+      xlab("median expression") +
+      ylab("estimated chance") +
+      ggtitle(paste0("Estimated chance of feature not being detected, window size: ", windowSize)) +
+      geom_abline(intercept = 0.05, slope = 0, size = 2, color="orange") +
+      geom_abline(intercept = 0.01, slope = 0, size = 2, color="yellow")
 })
 
 # -----------------------------------------------------------
