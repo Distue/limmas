@@ -288,7 +288,7 @@ setMethod("getGroupData", "ExpressionSet",
             stop(paste0("'group' is set to ", group, " which is not an element the column ", groupCol, " in the pData slot of the ExpressionSet given." ))
          }
 
-         groupData <- exprs(data.transformed)[,rownames(pData(data)[pData(data.transformed)[,groupCol] == group,])]
+         groupData <- exprs(data)[,rownames(pData(data)[pData(data)[,groupCol] == group,])]
          groupData <- groupData[!apply(groupData, 1, function(y) { all(is.na(y)) }),]
          medianExpression <- apply(groupData, 1, function(y) { median(y, na.rm = T)})
          sdExpression <- apply(groupData, 1, function(y) { sd(y, na.rm = T)})
