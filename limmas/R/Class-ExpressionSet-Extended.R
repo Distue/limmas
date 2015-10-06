@@ -231,7 +231,7 @@ setMethod("transformData", "ExpressionSet",
 
 ##' @name scaleData
 ##' @title scale data
-##' @description This function scales samples X by given scalefactor: $\fraction{X}{scalefactor}$
+##' @description This function scales samples X by given scalefactor
 ##' @param scalefactor numeric. factor for scaling
 ##' @param FUN function. scaling operation
 ##' @importClassesFrom Biobase ExpressionSet
@@ -338,7 +338,7 @@ setMethod("getGroupData", "ExpressionSet",
 ##' @export
 setMethod("plotMedianVsNAs", "ExpressionSet",
    function(data, group, groupCol="groups", ...) {
-      g <- getGroupData(data.transformed, group=group, groupCol=groupCol)
+      g <- getGroupData(data, group=group, groupCol=groupCol)
 
       boxplot(g[["stats"]][,"medianExpression"]~g[["stats"]][,"naCount"],
             main = paste(group, " (", ncol(g[["groupData"]]), " samples)", sep=""),
@@ -354,7 +354,7 @@ setMethod("plotMedianVsNAs", "ExpressionSet",
 ##' @export
 setMethod("plotMedianVsSD", "ExpressionSet",
           function(data, group, groupCol="groups", ...) {
-             g <- getGroupData(data.transformed, group=group, groupCol=groupCol)
+             g <- getGroupData(data, group=group, groupCol=groupCol)
 
              plot(g[["stats"]][,"medianExpression"], g[["stats"]][,"sdExpression"],
                   main = paste(group, " (", ncol(g[["groupData"]]), " samples)", sep=""),
@@ -370,7 +370,7 @@ setMethod("plotMedianVsSD", "ExpressionSet",
 ##' @export
 setMethod("plotNAsVsSD", "ExpressionSet",
           function(data, group, groupCol="groups", ...) {
-             g <- getGroupData(data.transformed, group=group, groupCol=groupCol)
+             g <- getGroupData(data, group=group, groupCol=groupCol)
 
             boxplot(g[["stats"]][,"sdExpression"]~g[["stats"]][,"naCount"],
                     main = paste(group, " (", ncol(g[["groupData"]]), " samples)", sep=""),
@@ -420,7 +420,7 @@ setMethod("plotNAdensity", "ExpressionSet", function(data, group, groupCol="grou
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @export
 setMethod("getGroupWindowData", "ExpressionSet", function(data, group, groupCol="groups", ...) {
-   g <- getGroupData(data.transformed, group=group, groupCol=groupCol)
+   g <- getGroupData(data, group=group, groupCol=groupCol)
 
    windowSize = 0.5
    stepSize = 0.1
@@ -450,7 +450,7 @@ setMethod("getGroupWindowData", "ExpressionSet", function(data, group, groupCol=
 
 
 ##' @name plotWindow
-##' @title plots chance of missingness
+##' @title plots percentage of missingness
 ##' @param group group
 ##' @param groupCol group column
 ##' @param windowSize size of window
@@ -460,7 +460,7 @@ setMethod("getGroupWindowData", "ExpressionSet", function(data, group, groupCol=
 ##' @importClassesFrom Biobase ExpressionSet
 ##' @import ggplot2
 ##' @export
-setMethod("plotChanceMissing", "ExpressionSet", function(data, group, groupCol="groups", windowSize = 0.3, stepSize = 0.5) {
+setMethod("plotPercentageMissing", "ExpressionSet", function(data, group, groupCol="groups", windowSize = 0.3, stepSize = 0.5) {
    X <- getGroupWindowData(data = data, group = group, groupCol = groupCol, windowSize = windowSize, stepSize = stepSize)
 
    ticks <- function(n) {
@@ -473,11 +473,10 @@ setMethod("plotChanceMissing", "ExpressionSet", function(data, group, groupCol="
       geom_point( aes(x = steps, y=perc), size = I(3)) +
       geom_line( aes(x = steps, y=perc)) +
       theme_minimal() +
-      theme(text = element_text(size=I(20))) +
-      xlim(c(g[["i.min"]], g[["i.max"]])) +
+     # theme(text = element_text(size=I(15))) +
       xlab("median expression") +
-      ylab("chance of missingness") +
-      ggtitle(paste0("Chance of missingness, window size: ", windowSize)) +
+      ylab("percentage of missingness") +
+      ggtitle(paste0("Percentage of missingness, window size: ", windowSize)) +
       scale_x_continuous(breaks = round(seq(min(X$steps), max(X$steps), by = 1),1)) +
       scale_y_continuous(breaks = round(seq(min(X$perc), max(X$perc), by = 0.1),1)) +
       geom_line( aes(x = steps, y=maxperc), col="red")
@@ -486,7 +485,7 @@ setMethod("plotChanceMissing", "ExpressionSet", function(data, group, groupCol="
 ##' @rdname plotWindow
 ##' @import ggplot2
 ##' @export
-setMethod("plotChanceNotDetected", "ExpressionSet",
+setMethod("plotProbabilityNotDetected", "ExpressionSet",
           function(data,
                    group,
                    groupCol = "groups",
@@ -504,13 +503,13 @@ setMethod("plotChanceNotDetected", "ExpressionSet",
    Y <- X[X[,"notdetected"] < 0.2 & X[,"notdetected"] > 0.001, ]
 
    ggplot(Y) +
-      geom_point( aes(x = steps, y=maxperc^ncol(g$groupData)), size = I(3)) +
-      geom_line( aes(x = steps, y=maxperc^ncol(g$groupData))) +
+      geom_point( aes(x = steps, y=notdetected), size = I(3)) +
+      geom_line( aes(x = steps, y=notdetected)) +
       theme_minimal() +
-      theme(text = element_text(size=I(20))) +
+      # theme(text = element_text(size=I(15))) +
       xlab("median expression") +
-      ylab("estimated chance") +
-      ggtitle(paste0("Estimated chance of feature not being detected, window size: ", windowSize)) +
+      ylab("estimated probability") +
+      ggtitle(paste0("Estimated probability of feature not being detected, window size: ", windowSize)) +
       geom_abline(intercept = 0.05, slope = 0, size = 2, color="orange") +
       geom_abline(intercept = 0.01, slope = 0, size = 2, color="yellow")
 })
